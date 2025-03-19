@@ -1,10 +1,10 @@
 import * as React from 'react';
 
-export default function Home() {
+export default function Account() {
 
   return (
     <div>
-      page d'acceuil
+      page de compte
     </div>
   );
 }

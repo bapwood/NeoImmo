@@ -25,15 +25,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>
-        <div className="flex bg-red-500">
+      <body className={geistSans.className}>
+        <div className="flex">
           <SidedNavbar />
-          {/* <Drawer open={true} variant="permanent">
-            {DrawerList}
-          </Drawer> */}
-          <main>
+          <div className="w-full overflow-x-auto">
             {children}
-          </main>
+          </div>
         </div>
       </body>
     </html>
