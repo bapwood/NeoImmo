@@ -1,0 +1,65 @@
+services:
+  database:
+    container_name: postgres
+    image: postgres:alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT}:${DB_PORT}"
+    networks:
+      - NeoImmo-docker
+  
+  server:
+    container_name: backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      - PORT=${SERVER_PORT}
+    ports:
+      - "${SERVER_PORT}:${SERVER_PORT}"
+    depends_on:
+      - database
+    volumes:
+      - ./backend/src:/server/src
+    networks:
+      - NeoImmo-docker
+    develop:
+      watch:
+        - action: rebuild
+          path: ./backend/src
+  
+  front:
+    container_name: frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: always
+    volumes:
+      - ./frontend:/app
+    depends_on:
+      - server
+    ports:
+      - "${FRONTEND_PORT}:${FRONTEND_PORT}"
+  
+  redis:
+    container_name: redis
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    restart: always
+    networks:
+      - NeoImmo-docker
+
+volumes:
+  pgdata:
+
+networks:
+  NeoImmo-docker:
+    driver: bridge
+  
