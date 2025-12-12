@@ -11,50 +11,56 @@ services:
       - pgdata:/var/lib/postgresql/data
     ports:
       - "${DB_PORT}:${DB_PORT}"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d neoimmo"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - NeoImmo-docker
-  
+
   server:
     container_name: backend
     build:
       context: ./backend
       dockerfile: Dockerfile
     environment:
+      - DATABASE_URL=${DATABASE_URL}
       - PORT=${SERVER_PORT}
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"
     depends_on:
-      - database
+      database:
+        condition: service_healthy
     volumes:
-      - ./backend/src:/server/src
+      - ./backend:/usr/src/app
+      - /usr/src/app/node_modules
     networks:
       - NeoImmo-docker
-    develop:
-      watch:
-        - action: rebuild
-          path: ./backend/src
-  
-  front:
-    container_name: frontend
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    restart: always
-    volumes:
-      - ./frontend:/app
-    depends_on:
-      - server
-    ports:
-      - "${FRONTEND_PORT}:${FRONTEND_PORT}"
-  
-  redis:
-    container_name: redis
-    image: redis:alpine
-    ports:
-      - "6379:6379"
-    restart: always
-    networks:
-      - NeoImmo-docker
+    # command: sh -c "npm run migrate && npm run start:dev"
+    command: npm run start:dev
+
+  # front:
+  #   container_name: frontend
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   restart: always
+  #   volumes:
+  #     - ./frontend:/app
+  #   depends_on:
+  #     - server
+  #   ports:
+  #     - "${FRONTEND_PORT}:${FRONTEND_PORT}"
+
+  # redis:
+  #   container_name: redis
+  #   image: redis:alpine
+  #   ports:
+  #     - "6379:6379"
+  #   restart: always
+  #   networks:
+  #     - NeoImmo-docker
 
 volumes:
   pgdata:
@@ -62,4 +68,3 @@ volumes:
 networks:
   NeoImmo-docker:
     driver: bridge
-  
