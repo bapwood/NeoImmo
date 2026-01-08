@@ -10,13 +10,15 @@ import { AuthModule } from './auth/auth.module';
 import { UserController } from './user/user.controller';
 import { UserService } from './user/user.service';
 import { PrismaService } from './prisma/prisma.service';
+import { PropertyModule } from './property/property.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
     UserModule,
-    AuthModule
+    AuthModule,
+    PropertyModule
   ],
   controllers: [
     AppController,

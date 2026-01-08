@@ -39,8 +39,24 @@ services:
       - /usr/src/app/node_modules
     networks:
       - NeoImmo-docker
-    # command: sh -c "npm run migrate"
-    command: npm run start:dev
+    command: npm run start:migrated
+
+  prisma-studio:
+    container_name: prisma-studio
+    image: node:20-alpine
+    working_dir: /usr/src/app
+    volumes:
+      - .:/usr/src/app
+    command: npx prisma studio --port 5555 --browser none --url "${DATABASE_URL}"
+    ports:
+      - "5555:5555"
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    networks:
+      - NeoImmo-docker
+    depends_on:
+      database:
+        condition: service_healthy
 
   # front:
   #   container_name: frontend

@@ -1,48 +1,102 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { User } from '@prisma/client';
 import { UserService } from 'src/user/user.service';
-
-type AuthInput = { username: string, password: string };
-type SignInData = { userId: number, username: string };
-type AuthResult = { accessToken: string, userId: number, username: string };
+import * as bcrypt from 'bcryptjs';
+import { SignInDto } from './dtos/signin.dtos';
+import { RegisterDto } from './dtos/register.dtos';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class AuthService {
-    constructor(
-        private userService: UserService,
-        private jwtSecret: JwtService
-    ) {}
+  constructor(
+    private userService: UserService,
+    private jwtService: JwtService,
+    private prisma: PrismaService
+  ) {}
 
-    async authenticate(input: AuthInput): Promise<AuthResult> {
-        const user = await this.validateUser(input);
+  async signIn(signInDto: SignInDto) {
+    const existingUser = await this.userService.getUserByEmail(signInDto.email);
 
-        if (!user) {
-            throw new UnauthorizedException();
-        }
-
-        return this.signIn(user);
+    if (!existingUser) {
+      throw new UnauthorizedException('Wrong credentials');
     }
 
-    async validateUser(input: AuthInput): Promise<SignInData | null> {
-        const user = await this.userService.getUserByUsername(input.username);
-
-        if (user && user.password === input.password) {
-            return {
-                userId: user.id,
-                username: user.username
-            }
-        }
-        return null;
+    const passwordMatch = await bcrypt.compare(signInDto.password, existingUser.password);
+    if (!passwordMatch) {
+      throw new UnauthorizedException('Wrong credentials');
     }
 
-    async signIn(user: SignInData): Promise<AuthResult> {
-        const tokenPayload = {
-            sub: user.userId,
-            username: user.username
-        };
+    const tokens = await this.generateUserTokens(existingUser.id);
 
-        const accessToken = await this.jwtSecret.signAsync(tokenPayload);
+    return { ...tokens, userId: existingUser.id };
+  }
 
-        return { accessToken, username: user.username, userId: user.userId };
+  async register(registerDto: RegisterDto): Promise<User> {
+    const emailInUse = await this.userService.getUserByEmail(registerDto.email);
+
+    if (emailInUse) {
+      throw new BadRequestException('Email already in use');
     }
+
+    const hashedPassword = await bcrypt.hash(registerDto.password, 10);
+
+    return this.userService.createUser({
+      email: registerDto.email,
+      password: hashedPassword
+    });
+  }
+
+  async generateUserTokens(userId) {
+    const accessToken = this.jwtService.sign({ userId }, { expiresIn: '1h' });
+    const refreshToken = uuidv4();
+
+    await this.storeRefreshToken(refreshToken, userId);
+
+    return { accessToken, refreshToken };
+  }
+
+  async refreshTokens(token: string) {
+    const existingToken = await this.prisma.refreshToken.findFirst({
+      where: {
+        token,
+      }
+    });
+
+    if (!existingToken) {
+      throw new UnauthorizedException();
+    }
+
+    return this.generateUserTokens(existingToken.userId);
+  }
+
+  async storeRefreshToken(token: string, userId) {
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + 3);
+    const data = { token, userId, expiryDate };
+
+    const previousToken = await this.prisma.refreshToken.findFirst({
+      where: {
+        userId
+      }
+    });
+
+    if (!previousToken) {
+      await this.prisma.refreshToken.create({
+        data
+      });
+    } else {
+      await this.prisma.refreshToken.update({
+        where: {
+          userId
+        },
+        data
+      });
+    }
+  }
 }
