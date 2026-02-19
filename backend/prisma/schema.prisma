@@ -17,6 +17,15 @@ model User {
   email     String   @unique
   password  String
   createdAt DateTime @default(now())
+  firstName String?
+  lastName  String?
+  address   String?
+  city      String?
+  country   String?
+  day       String?
+  month     String?
+  year      String?
+  number    String?
 }
 
 model RefreshToken {
@@ -26,10 +35,16 @@ model RefreshToken {
 }
 
 model Property {
-  id           Int      @id @default(autoincrement())
-  name         String
-  createdAt    DateTime @default(now())
-  localization String
-  livingArea   String
-  score        Int
+  id             Int      @id @default(autoincrement())
+  name           String
+  createdAt      DateTime @default(now())
+  localization   String
+  livingArea     String
+  score          Int
+  description    String
+  roomNumber     Int
+  bathroomNumber Int
+  tokenNumber    Int
+  tokenPrice     Int
+  images         String[]
 }

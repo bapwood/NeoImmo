@@ -8,9 +8,9 @@ import { User } from '@prisma/client';
 import { UserService } from 'src/user/user.service';
 import * as bcrypt from 'bcryptjs';
 import { SignInDto } from './dtos/signin.dtos';
-import { RegisterDto } from './dtos/register.dtos';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { v4 as uuidv4 } from 'uuid';
+import { UserDto } from 'src/user/dto/user.dtos';
 
 @Injectable()
 export class AuthService {
@@ -37,7 +37,7 @@ export class AuthService {
     return { ...tokens, userId: existingUser.id };
   }
 
-  async register(registerDto: RegisterDto): Promise<User> {
+  async register(registerDto: UserDto): Promise<User> {
     const emailInUse = await this.userService.getUserByEmail(registerDto.email);
 
     if (emailInUse) {
@@ -48,7 +48,7 @@ export class AuthService {
 
     return this.userService.createUser({
       email: registerDto.email,
-      password: hashedPassword
+      password: hashedPassword,
     });
   }
 

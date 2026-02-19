@@ -1,10 +1,10 @@
 import { Controller, Get, HttpCode, HttpStatus, Post, UseGuards, Request, Body } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import type { User } from '@prisma/client';
-import { RegisterDto } from './dtos/register.dtos';
 import { SignInDto } from './dtos/signin.dtos';
 import { RefreshTokenDto } from './dtos/refresh-token.dtos';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { UserDto } from 'src/user/dto/user.dtos';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -23,7 +23,7 @@ export class AuthController {
   @Post('register')
   @ApiResponse({ status: 201, description: 'Register ok' })
   @ApiResponse({ status: 400, description: 'Missing/Already in use credentials' })
-  register(@Body() registerDto: RegisterDto) {
+  register(@Body() registerDto: UserDto) {
     return this.authService.register(registerDto);
   }
 
