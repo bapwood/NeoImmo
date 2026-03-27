@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import type { ResourceConfig } from '@/src/lib/dashboard-resources';
 import { LogoutIcon, SearchIcon } from '../icons';
 import type { PanelKey } from './types';
@@ -22,6 +23,24 @@ export default function DashboardTopbar({
   onQueryChange,
   query,
 }: DashboardTopbarProps) {
+  const [account, setAccount] = useState<string | null>(null);
+
+  const connectWallet = async () => {
+    if (typeof window === 'undefined' || !(window as any).ethereum) {
+      alert('MetaMask non détecté');
+      return;
+    }
+
+    try {
+      const accounts = await (window as any).ethereum.request({
+        method: 'eth_requestAccounts',
+      });
+      setAccount(accounts[0]);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const showSearch =
     activePanel === 'opportunities' ||
     (activeResource?.allowSearch && activePanel !== 'overview');
@@ -66,6 +85,17 @@ export default function DashboardTopbar({
             />
           </label>
         ) : null}
+
+        {/* Bouton MetaMask */}
+        <button
+          type="button"
+          className={styles.logoutButton}
+          onClick={connectWallet}
+        >
+          {account
+            ? `${account.slice(0, 6)}...${account.slice(-4)}`
+            : 'Connecter MetaMask'}
+        </button>
 
         <button type="button" className={styles.logoutButton} onClick={onLogout}>
           <LogoutIcon className={styles.buttonIcon} />
