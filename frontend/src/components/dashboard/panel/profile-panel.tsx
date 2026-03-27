@@ -65,6 +65,12 @@ const profileSections: ProfileSection[] = [
     fieldKeys: ['occupation', 'annualIncomeRange', 'investmentObjective'],
   },
   {
+    key: 'wallet',
+    title: 'Wallet & on-chain',
+    description: 'La wallet principale et le code pays qui serviront au futur parcours crypto/KYC.',
+    fieldKeys: ['walletAddress', 'countryCode'],
+  },
+  {
     key: 'security',
     title: 'Sécurité',
     description: 'Laissez le mot de passe vide si vous ne souhaitez pas le modifier.',

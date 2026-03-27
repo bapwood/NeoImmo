@@ -19,6 +19,53 @@ services:
     networks:
       - NeoImmo-docker
 
+  chain:
+    container_name: chain
+    build:
+      context: ./crypto
+      dockerfile: Dockerfile
+    restart: always
+    command: npm run node
+    environment:
+      BLOCKCHAIN_MNEMONIC: ${BLOCKCHAIN_MNEMONIC:-test test test test test test test test test test test junk}
+    ports:
+      - "${HARDHAT_PORT:-8545}:8545"
+    volumes:
+      - ./crypto:/usr/src/app
+      - /usr/src/app/node_modules
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:8545',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',method:'eth_chainId',params:[],id:1})}).then((response)=>response.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    networks:
+      - NeoImmo-docker
+
+  chain-deployer:
+    container_name: chain-deployer
+    build:
+      context: ./crypto
+      dockerfile: Dockerfile
+    command: npm run deploy:local
+    environment:
+      DEPLOYMENTS_FILE: /usr/src/app/deployments/local.json
+      RPC_LOCALHOST: http://chain:8545
+      BLOCKCHAIN_MNEMONIC: ${BLOCKCHAIN_MNEMONIC:-test test test test test test test test test test test junk}
+    depends_on:
+      chain:
+        condition: service_healthy
+    volumes:
+      - ./crypto:/usr/src/app
+      - /usr/src/app/node_modules
+    networks:
+      - NeoImmo-docker
+
   server:
     container_name: backend
     build:
@@ -29,13 +76,25 @@ services:
       PORT: ${SERVER_PORT}
       JWT_SECRET: ${JWT_SECRET}
       UPLOAD_DIR: /usr/src/app/uploads
+      BLOCKCHAIN_ENABLED: "true"
+      BLOCKCHAIN_RPC_URL: http://chain:8545
+      BLOCKCHAIN_CHAIN_ID: 31337
+      BLOCKCHAIN_MNEMONIC: ${BLOCKCHAIN_MNEMONIC:-test test test test test test test test test test test junk}
+      BLOCKCHAIN_BACKEND_ACCOUNT_INDEX: ${BLOCKCHAIN_BACKEND_ACCOUNT_INDEX:-0}
+      BLOCKCHAIN_TREASURY_ACCOUNT_INDEX: ${BLOCKCHAIN_TREASURY_ACCOUNT_INDEX:-1}
+      BLOCKCHAIN_DEFAULT_COUNTRY_CODE: ${BLOCKCHAIN_DEFAULT_COUNTRY_CODE:-FR}
+      BLOCKCHAIN_DEPLOYMENTS_FILE: /usr/src/crypto/deployments/local.json
+      BLOCKCHAIN_METADATA_BASE_URL: http://localhost:${SERVER_PORT:-3001}
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"
     depends_on:
       database:
         condition: service_healthy
+      chain-deployer:
+        condition: service_completed_successfully
     volumes:
       - ./backend:/usr/src/app
+      - ./crypto:/usr/src/crypto:ro
       - /usr/src/app/node_modules
     networks:
       - NeoImmo-docker

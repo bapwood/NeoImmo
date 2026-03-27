@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Role, User } from '@prisma/client';
-import { IsEmail, IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsEnum, IsOptional, IsString, Matches } from 'class-validator';
 
 class UserBaseDto {
   @ApiProperty({
@@ -137,6 +137,24 @@ class UserBaseDto {
   @IsString()
   @IsOptional()
   investmentObjective?: string;
+
+  @ApiPropertyOptional({
+    description: 'The ISO 3166-1 alpha-2 country code used for on-chain compliance',
+    example: 'FR',
+  })
+  @IsString()
+  @IsOptional()
+  @Matches(/^[A-Za-z]{2}$/)
+  countryCode?: string;
+
+  @ApiPropertyOptional({
+    description: 'The primary wallet address associated with the user',
+    example: '0x1234567890abcdef1234567890abcdef12345678',
+  })
+  @IsString()
+  @IsOptional()
+  @Matches(/^0x[a-fA-F0-9]{40}$/)
+  walletAddress?: string;
 }
 
 export class CreateUserDto extends UserBaseDto {
@@ -309,6 +327,24 @@ export class UpdateUserDto {
   @IsString()
   @IsOptional()
   investmentObjective?: string;
+
+  @ApiPropertyOptional({
+    description: 'The ISO 3166-1 alpha-2 country code used for on-chain compliance',
+    example: 'FR',
+  })
+  @IsString()
+  @IsOptional()
+  @Matches(/^[A-Za-z]{2}$/)
+  countryCode?: string;
+
+  @ApiPropertyOptional({
+    description: 'The primary wallet address associated with the user',
+    example: '0x1234567890abcdef1234567890abcdef12345678',
+  })
+  @IsString()
+  @IsOptional()
+  @Matches(/^0x[a-fA-F0-9]{40}$/)
+  walletAddress?: string;
 }
 
 export type PublicUser = Omit<User, 'password'>;

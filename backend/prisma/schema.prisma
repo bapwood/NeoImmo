@@ -17,6 +17,38 @@ enum Role {
   ADMIN
 }
 
+enum WalletStatus {
+  UNSET
+  PENDING
+  VERIFIED
+}
+
+enum TokenizationStatus {
+  DRAFT
+  DEPLOYED
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum BlockchainOperationType {
+  SYNC_WALLET_KYC
+  SET_BLOCKLIST
+  SET_BLOCKED_COUNTRY
+  DEPLOY_PROPERTY
+  MINT_PROPERTY
+  PREPARE_PRIMARY_BUY
+  EXECUTE_PRIMARY_BUY
+}
+
+enum BlockchainOperationStatus {
+  PREPARED
+  SUBMITTED
+  CONFIRMED
+  FAILED
+  CANCELLED
+}
+
 model User {
   id           Int           @id @default(autoincrement())
   email        String        @unique
@@ -39,8 +71,14 @@ model User {
   taxResidence String?
   annualIncomeRange String?
   investmentObjective String?
+  countryCode  String?
+  walletAddress String?      @unique
+  walletStatus WalletStatus  @default(UNSET)
+  walletVerifiedAt DateTime?
+  kycSyncedAt  DateTime?
   refreshToken RefreshToken?
   properties   Property[]
+  blockchainOperations BlockchainOperation[]
 }
 
 model RefreshToken {
@@ -63,9 +101,21 @@ model Property {
   bathroomNumber Int
   tokenNumber    Int
   tokenPrice     Int
+  symbol         String?
+  contractAddress String?   @unique
+  chainId        Int?
+  metadataUri    String?
+  metadataHash   String?
+  metadataSignature String?
+  deployTxHash   String?
+  tokenizationStatus TokenizationStatus @default(DRAFT)
+  treasuryWalletAddress String?
+  backendOperatorWalletAddress String?
+  tokenDecimals  Int      @default(18)
   images         String[]
   keyPoints      KeyPoint[]
   owner          User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  blockchainOperations BlockchainOperation[]
 }
 
 model KeyPoint {
@@ -73,4 +123,29 @@ model KeyPoint {
   label      String     @unique
   createdAt  DateTime   @default(now())
   properties Property[]
+}
+
+model BlockchainOperation {
+  id         Int      @id @default(autoincrement())
+  requestId  String?  @unique
+  type       BlockchainOperationType
+  status     BlockchainOperationStatus @default(PREPARED)
+  chainId    Int?
+  propertyId Int?
+  userId     Int?
+  fromWallet String?
+  toWallet   String?
+  amount     String?
+  price      String?
+  currency   String?
+  nonce      String?
+  deadline   DateTime?
+  signature  String?
+  txHash     String?
+  payload    Json?
+  errorMessage String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  property   Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  user       User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
 }

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsOptional, IsString, Matches } from 'class-validator';
 
 export class RegisterDto {
   @ApiProperty({
@@ -159,4 +159,24 @@ export class RegisterDto {
   @IsString()
   @IsOptional()
   investmentObjective?: string;
+
+  @ApiProperty({
+    description: 'The ISO 3166-1 alpha-2 country code used for on-chain compliance',
+    example: 'FR',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  @Matches(/^[A-Za-z]{2}$/)
+  countryCode?: string;
+
+  @ApiProperty({
+    description: 'The primary wallet address associated with the user',
+    example: '0x1234567890abcdef1234567890abcdef12345678',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  @Matches(/^0x[a-fA-F0-9]{40}$/)
+  walletAddress?: string;
 }

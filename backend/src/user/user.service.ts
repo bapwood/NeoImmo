@@ -4,7 +4,7 @@ import {
   HttpStatus,
   Injectable,
 } from '@nestjs/common';
-import { Prisma, User } from '@prisma/client';
+import { Prisma, User, WalletStatus } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateUserDto, PublicUser, UpdateUserDto } from './dto/user.dtos';
@@ -95,12 +95,17 @@ export class UserService {
 
   async createUser(data: CreateUserDto): Promise<PublicUser> {
     try {
+      const profileFields = this.extractProfileFields(data);
+
       const createdUser = await this.prisma.user.create({
         data: {
-          ...this.extractProfileFields(data),
+          ...profileFields,
           email: data.email,
           password: await bcrypt.hash(data.password, 10),
           role: data.role ?? 'CLIENT',
+          walletStatus: profileFields.walletAddress
+            ? WalletStatus.PENDING
+            : WalletStatus.UNSET,
         },
       });
 
@@ -166,6 +171,8 @@ export class UserService {
       taxResidence: data.taxResidence,
       annualIncomeRange: data.annualIncomeRange,
       investmentObjective: data.investmentObjective,
+      countryCode: data.countryCode?.trim().toUpperCase(),
+      walletAddress: data.walletAddress?.trim(),
     };
   }
 
@@ -186,6 +193,23 @@ export class UserService {
       payload.password = await bcrypt.hash(data.password, 10);
     }
 
+    if (data.countryCode !== undefined) {
+      payload.countryCode = data.countryCode.trim().toUpperCase();
+    }
+
+    if (data.walletAddress !== undefined) {
+      const normalizedWalletAddress = data.walletAddress.trim();
+      payload.walletAddress = normalizedWalletAddress;
+      payload.walletStatus =
+        normalizedWalletAddress === '' ? WalletStatus.UNSET : WalletStatus.PENDING;
+      payload.walletVerifiedAt = null;
+
+      if (normalizedWalletAddress === '') {
+        payload.walletAddress = null;
+        payload.kycSyncedAt = null;
+      }
+    }
+
     return payload;
   }
 
@@ -194,6 +218,14 @@ export class UserService {
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === 'P2002'
     ) {
+      const targets = Array.isArray(error.meta?.target)
+        ? error.meta.target
+        : [error.meta?.target].filter((value): value is string => typeof value === 'string');
+
+      if (targets.includes('walletAddress')) {
+        throw new BadRequestException('Wallet address already in use');
+      }
+
       throw new BadRequestException('Email already in use');
     }
 

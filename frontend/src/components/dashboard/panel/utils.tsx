@@ -63,6 +63,8 @@ const clientProfileCompletionKeys: Array<keyof PanelUser> = [
   'taxResidence',
   'annualIncomeRange',
   'investmentObjective',
+  'walletAddress',
+  'countryCode',
 ];
 
 const clientKycReadinessKeys: Array<keyof PanelUser> = [
@@ -80,6 +82,8 @@ const clientKycReadinessKeys: Array<keyof PanelUser> = [
   'nationality',
   'occupation',
   'taxResidence',
+  'walletAddress',
+  'countryCode',
 ];
 
 function countFilledFields(user: PanelUser | null | undefined, keys: Array<keyof PanelUser>) {

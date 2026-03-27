@@ -97,6 +97,20 @@ const userProfileFields: FieldConfig[] = [
   { key: 'birthPlace', label: 'Lieu de naissance', kind: 'text', placeholder: 'Lyon' },
   { key: 'nationality', label: 'Nationalité', kind: 'text', placeholder: 'Française' },
   { key: 'number', label: 'Téléphone', kind: 'text', placeholder: '+33 6 12 34 56 78' },
+  {
+    key: 'walletAddress',
+    label: 'Wallet principale',
+    kind: 'text',
+    placeholder: '0x1234567890abcdef1234567890abcdef12345678',
+    helperText: 'Une seule wallet par utilisateur. Elle sera utilisée pour les signatures et le KYC on-chain.',
+  },
+  {
+    key: 'countryCode',
+    label: 'Code pays ISO',
+    kind: 'text',
+    placeholder: 'FR',
+    helperText: 'Code alpha-2 utilisé pour les contrôles de conformité on-chain.',
+  },
   { key: 'occupation', label: 'Profession', kind: 'text', placeholder: 'Consultant' },
   {
     key: 'taxResidence',

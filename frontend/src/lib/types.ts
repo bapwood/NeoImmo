@@ -21,6 +21,11 @@ export type UserRecord = {
   taxResidence?: string | null;
   annualIncomeRange?: string | null;
   investmentObjective?: string | null;
+  countryCode?: string | null;
+  walletAddress?: string | null;
+  walletStatus?: 'UNSET' | 'PENDING' | 'VERIFIED' | null;
+  walletVerifiedAt?: string | null;
+  kycSyncedAt?: string | null;
 };
 
 export type PropertyRecord = {
@@ -36,6 +41,17 @@ export type PropertyRecord = {
   bathroomNumber: number;
   tokenNumber: number;
   tokenPrice: number;
+  symbol?: string | null;
+  contractAddress?: string | null;
+  chainId?: number | null;
+  metadataUri?: string | null;
+  metadataHash?: string | null;
+  metadataSignature?: string | null;
+  deployTxHash?: string | null;
+  tokenizationStatus?: 'DRAFT' | 'DEPLOYED' | 'ACTIVE' | 'PAUSED' | 'ARCHIVED' | null;
+  treasuryWalletAddress?: string | null;
+  backendOperatorWalletAddress?: string | null;
+  tokenDecimals?: number | null;
   images: string[];
   keyPoints: string[];
 };

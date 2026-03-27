@@ -1,0 +1,28 @@
+{
+  "name": "real-estate-tokenization",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "hardhat test",
+    "node": "hardhat node --hostname 0.0.0.0",
+    "deploy:local:core": "hardhat run scripts/00_deploy_kyc_gate.ts --network localhost",
+    "deploy:local:factory": "hardhat run scripts/01_deploy_property.ts --network localhost",
+    "deploy:local": "npm run deploy:local:core && npm run deploy:local:factory"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox-mocha-ethers": "^3.0.1",
+    "@types/node": "^24.10.1",
+    "dotenv": "^17.2.3",
+    "hardhat": "^3.0.15",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.4.0"
+  }
+}
