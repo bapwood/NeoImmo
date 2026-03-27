@@ -1,10 +1,5 @@
-import * as React from 'react';
+import { redirect } from 'next/navigation';
 
-export default function Settings() {
-
-  return (
-    <div>
-      page de reglages
-    </div>
-  );
+export default function ReglagesPage() {
+  redirect('/');
 }

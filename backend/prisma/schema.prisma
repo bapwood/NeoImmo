@@ -12,32 +12,49 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Role {
+  CLIENT
+  ADMIN
+}
+
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
-  firstName String?
-  lastName  String?
-  address   String?
-  city      String?
-  country   String?
-  day       String?
-  month     String?
-  year      String?
-  number    String?
+  id           Int           @id @default(autoincrement())
+  email        String        @unique
+  password     String
+  role         Role          @default(CLIENT)
+  createdAt    DateTime      @default(now())
+  firstName    String?
+  lastName     String?
+  address      String?
+  postalCode   String?
+  city         String?
+  country      String?
+  day          String?
+  month        String?
+  year         String?
+  birthPlace   String?
+  nationality  String?
+  number       String?
+  occupation   String?
+  taxResidence String?
+  annualIncomeRange String?
+  investmentObjective String?
+  refreshToken RefreshToken?
+  properties   Property[]
 }
 
 model RefreshToken {
-  token      String
+  token      String   @unique
   userId     Int      @id
   expiryDate DateTime
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Property {
   id             Int      @id @default(autoincrement())
   name           String
   createdAt      DateTime @default(now())
+  ownerId        Int?
   localization   String
   livingArea     String
   score          Int
@@ -47,4 +64,13 @@ model Property {
   tokenNumber    Int
   tokenPrice     Int
   images         String[]
+  keyPoints      KeyPoint[]
+  owner          User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+}
+
+model KeyPoint {
+  id         Int        @id @default(autoincrement())
+  label      String     @unique
+  createdAt  DateTime   @default(now())
+  properties Property[]
 }

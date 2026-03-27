@@ -1,0 +1,29 @@
+.loader {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  gap: 1rem;
+  text-align: center;
+}
+
+.orb {
+  width: 68px;
+  height: 68px;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.95), transparent 35%),
+    linear-gradient(135deg, rgba(var(--theme-primary-rgb), 0.95), rgba(var(--theme-secondary-rgb), 0.96));
+  box-shadow: 0 18px 42px rgba(var(--theme-primary-rgb), 0.16);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.06);
+  }
+}

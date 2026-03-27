@@ -1,15 +1,32 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  Injectable,
+} from '@nestjs/common';
 import { Prisma, User } from '@prisma/client';
+import * as bcrypt from 'bcryptjs';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { UserDto } from './dto/user.dtos';
+import { CreateUserDto, PublicUser, UpdateUserDto } from './dto/user.dtos';
 
 @Injectable()
 export class UserService {
   constructor(private prisma: PrismaService) {}
 
-  async getAllUsers(): Promise<User[]> {
+  toPublicUser(user: User): PublicUser {
+    const { password: _password, ...safeUser } = user;
+    return safeUser;
+  }
+
+  async getAllUsers(): Promise<PublicUser[]> {
     try {
-      return await this.prisma.user.findMany();
+      const users = await this.prisma.user.findMany({
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      return users.map((user) => this.toPublicUser(user));
     } catch (error) {
       throw new HttpException(
         {
@@ -24,7 +41,7 @@ export class UserService {
     }
   }
 
-  async getUserById(id: number): Promise<User | null> {
+  async getUserEntityById(id: number): Promise<User | null> {
     try {
       return await this.prisma.user.findUnique({
         where: {
@@ -45,7 +62,12 @@ export class UserService {
     }
   }
 
-  async getUserByEmail(email: string): Promise<User | null> {
+  async getUserById(id: number): Promise<PublicUser | null> {
+    const user = await this.getUserEntityById(id);
+    return user ? this.toPublicUser(user) : null;
+  }
+
+  async getUserEntityByEmail(email: string): Promise<User | null> {
     try {
       return await this.prisma.user.findUnique({
         where: {
@@ -66,54 +88,52 @@ export class UserService {
     }
   }
 
-  async createUser(data: UserDto): Promise<User> {
+  async getUserByEmail(email: string): Promise<PublicUser | null> {
+    const user = await this.getUserEntityByEmail(email);
+    return user ? this.toPublicUser(user) : null;
+  }
+
+  async createUser(data: CreateUserDto): Promise<PublicUser> {
     try {
-      return await await this.prisma.user.create({
-        data,
+      const createdUser = await this.prisma.user.create({
+        data: {
+          ...this.extractProfileFields(data),
+          email: data.email,
+          password: await bcrypt.hash(data.password, 10),
+          role: data.role ?? 'CLIENT',
+        },
       });
+
+      return this.toPublicUser(createdUser);
     } catch (error) {
-      throw new HttpException(
-        {
-          status: HttpStatus.INTERNAL_SERVER_ERROR,
-          error: 'Could not create user',
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        {
-          cause: error,
-        },
-      );
+      this.throwUserWriteError(error, 'Could not create user');
     }
   }
 
-  async updateUser(id: number, data: UserDto): Promise<User> {
+  async updateUser(id: number, data: UpdateUserDto): Promise<PublicUser> {
     try {
-      return await this.prisma.user.update({
+      const updatedUser = await this.prisma.user.update({
         where: {
           id,
         },
-        data,
+        data: await this.buildUpdatePayload(data),
       });
+
+      return this.toPublicUser(updatedUser);
     } catch (error) {
-      throw new HttpException(
-        {
-          status: HttpStatus.INTERNAL_SERVER_ERROR,
-          error: 'Could not update user',
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        {
-          cause: error,
-        },
-      );
+      this.throwUserWriteError(error, 'Could not update user');
     }
   }
 
-  async deleteUser(id: number): Promise<User> {
+  async deleteUser(id: number): Promise<PublicUser> {
     try {
-      return await this.prisma.user.delete({
+      const deletedUser = await this.prisma.user.delete({
         where: {
           id,
         },
       });
+
+      return this.toPublicUser(deletedUser);
     } catch (error) {
       throw new HttpException(
         {
@@ -126,5 +146,66 @@ export class UserService {
         },
       );
     }
+  }
+
+  private extractProfileFields(data: CreateUserDto | UpdateUserDto) {
+    return {
+      firstName: data.firstName,
+      lastName: data.lastName,
+      address: data.address,
+      postalCode: data.postalCode,
+      city: data.city,
+      country: data.country,
+      day: data.day,
+      month: data.month,
+      year: data.year,
+      birthPlace: data.birthPlace,
+      nationality: data.nationality,
+      number: data.number,
+      occupation: data.occupation,
+      taxResidence: data.taxResidence,
+      annualIncomeRange: data.annualIncomeRange,
+      investmentObjective: data.investmentObjective,
+    };
+  }
+
+  private async buildUpdatePayload(data: UpdateUserDto): Promise<Prisma.UserUpdateInput> {
+    const payload: Prisma.UserUpdateInput = {
+      ...this.extractProfileFields(data),
+    };
+
+    if (data.email !== undefined) {
+      payload.email = data.email;
+    }
+
+    if (data.role !== undefined) {
+      payload.role = data.role;
+    }
+
+    if (data.password && data.password.trim() !== '') {
+      payload.password = await bcrypt.hash(data.password, 10);
+    }
+
+    return payload;
+  }
+
+  private throwUserWriteError(error: unknown, fallbackMessage: string): never {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
+      throw new BadRequestException('Email already in use');
+    }
+
+    throw new HttpException(
+      {
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        error: fallbackMessage,
+      },
+      HttpStatus.INTERNAL_SERVER_ERROR,
+      {
+        cause: error,
+      },
+    );
   }
 }

@@ -1,10 +1,5 @@
-import * as React from 'react';
+import { redirect } from 'next/navigation';
 
-export default function Account() {
-
-  return (
-    <div>
-      page de compte
-    </div>
-  );
+export default function MonComptePage() {
+  redirect('/?panel=user');
 }

@@ -1,0 +1,173 @@
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.brandLockup {
+  display: flex;
+  align-items: center;
+  gap: 0.95rem;
+  padding: 0.5rem 0.35rem 0.25rem;
+}
+
+.brandCopy {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.brandTitle {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.brandIcon {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+  color: white;
+  font-size: 1.3rem;
+  font-weight: 700;
+  box-shadow: var(--shadow-soft);
+}
+
+.nav {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.navButton {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  text-align: left;
+  border: 1px solid transparent;
+  border-radius: 22px;
+  padding: 0.95rem 1rem;
+  background: transparent;
+  color: var(--foreground);
+  cursor: pointer;
+  transition: transform 180ms ease, border-color 180ms ease, background-color 180ms ease;
+}
+
+.navButton:hover {
+  transform: translateY(-1px);
+  border-color: rgba(var(--theme-primary-rgb), 0.14);
+  background: rgba(var(--theme-surface-rgb), 0.56);
+}
+
+.navButtonActive {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  text-align: left;
+  border: 1px solid rgba(var(--theme-primary-rgb), 0.18);
+  border-radius: 22px;
+  padding: 0.95rem 1rem;
+  background: rgba(var(--theme-surface-rgb), 0.9);
+  color: var(--foreground);
+  cursor: pointer;
+  box-shadow: var(--shadow-soft);
+  transition: transform 180ms ease, border-color 180ms ease, background-color 180ms ease;
+}
+
+.navButtonActive:hover {
+  transform: translateY(-1px);
+}
+
+.navIcon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.navButtonCopy {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.navButtonCopy strong {
+  font-size: 0.98rem;
+}
+
+.navButtonCopy small {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.sessionCard {
+  margin-top: auto;
+  border: 1px solid rgba(var(--theme-primary-rgb), 0.12);
+  border-radius: 28px;
+  padding: 1.2rem;
+  background: rgba(var(--theme-surface-rgb), 0.92);
+  box-shadow: var(--shadow-soft);
+}
+
+.sessionName {
+  display: block;
+  margin-top: 0.85rem;
+  font-size: 1.08rem;
+}
+
+.sessionEmail {
+  margin: 0.45rem 0 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.sessionInline {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-top: 0.9rem;
+}
+
+.rolePillAdmin {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  background: rgba(var(--theme-primary-rgb), 0.12);
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.rolePillClient {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  background: rgba(var(--theme-secondary-rgb), 0.45);
+  color: var(--foreground);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.sessionCopy {
+  margin: 0.8rem 0 0;
+  font-size: 0.86rem;
+  color: var(--muted);
+}
+
+@media (max-width: 1180px) {
+  .sidebar {
+    order: 2;
+  }
+}

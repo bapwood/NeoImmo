@@ -1,15 +1,14 @@
-import { Controller, Get, HttpCode, HttpStatus, Post, UseGuards, Request, Body } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import type { User } from '@prisma/client';
-import { SignInDto } from './dtos/signin.dtos';
-import { RefreshTokenDto } from './dtos/refresh-token.dtos';
+import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
-import { UserDto } from 'src/user/dto/user.dtos';
+import { AuthService } from './auth.service';
+import { RefreshTokenDto } from './dtos/refresh-token.dtos';
+import { RegisterDto } from './dtos/register.dto';
+import { SignInDto } from './dtos/signin.dtos';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private readonly authService: AuthService) {}
 
   @HttpCode(HttpStatus.OK)
   @Post('login')
@@ -23,8 +22,15 @@ export class AuthController {
   @Post('register')
   @ApiResponse({ status: 201, description: 'Register ok' })
   @ApiResponse({ status: 400, description: 'Missing/Already in use credentials' })
-  register(@Body() registerDto: UserDto) {
+  register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
+  }
+
+  @Post('bootstrap-admin')
+  @ApiResponse({ status: 201, description: 'Bootstrap admin created' })
+  @ApiResponse({ status: 400, description: 'Admin already exists or invalid payload' })
+  bootstrapAdmin(@Body() registerDto: RegisterDto) {
+    return this.authService.bootstrapAdmin(registerDto);
   }
 
   @Post('refresh')

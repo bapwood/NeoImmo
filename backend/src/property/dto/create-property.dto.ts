@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsString, IsArray, Max, Min } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsArray, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class CreatePropertyDto {
   @ApiProperty({
@@ -74,5 +74,15 @@ export class CreatePropertyDto {
     example: '[https://neoimmo.s3.amazonaws.com/neoimmo/property_1.jpg]',
   })
   @IsArray()
+  @IsString({ each: true })
   images: string[];
+
+  @ApiPropertyOptional({
+    description: 'Key points associated with the property',
+    example: ['Piscine', 'Lumineux', 'Terrasse'],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  keyPoints?: string[];
 }

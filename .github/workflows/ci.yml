@@ -16,12 +16,37 @@ jobs:
         with:
           node-version: 20
 
-      - run: npm ci
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
         working-directory: ./frontend
       - run: npm run build
         working-directory: ./frontend
       - run: npm run test --if-present
         working-directory: ./frontend
+
+  test_frontend_admin:
+    runs-on: ubuntu-latest
+    container:
+      image: node:20
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v3
+        with:
+          node-version: 20
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+        working-directory: ./frontend_admin
+      - run: npm run build
+        working-directory: ./frontend_admin
+      - run: npm run test --if-present
+        working-directory: ./frontend_admin
 
   test_backend:
     runs-on: ubuntu-latest

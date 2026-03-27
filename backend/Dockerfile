@@ -8,4 +8,6 @@ RUN npm install
 
 COPY . .
 
+RUN mkdir -p /usr/src/app/uploads/properties
+
 CMD ["npm", "run", "start:dev"]

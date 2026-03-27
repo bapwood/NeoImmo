@@ -1,28 +1,70 @@
-@import "tailwindcss";
-
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --primary: #c9c9c9;
+  --theme-primary: #0052cc;
+  --theme-primary-rgb: 0, 82, 204;
+  --theme-secondary: #ffd6c0;
+  --theme-secondary-rgb: 255, 214, 192;
+  --theme-surface: #ffffff;
+  --theme-surface-rgb: 255, 255, 255;
+  --theme-ink: #173a6a;
+  --theme-ink-rgb: 23, 58, 106;
+  --theme-muted: #677a98;
+  --theme-danger: #bf6b54;
+
+  --background: #f7f9fe;
+  --foreground: var(--theme-ink);
+  --muted: var(--theme-muted);
+  --line: rgba(var(--theme-primary-rgb), 0.12);
+  --line-strong: rgba(var(--theme-primary-rgb), 0.18);
+  --panel: rgba(var(--theme-surface-rgb), 0.92);
+  --panel-strong: rgba(var(--theme-surface-rgb), 0.98);
+  --accent: var(--theme-primary);
+  --accent-soft: rgba(var(--theme-primary-rgb), 0.1);
+  --accent-secondary: var(--theme-secondary);
+  --accent-secondary-soft: rgba(var(--theme-secondary-rgb), 0.52);
+  --danger: var(--theme-danger);
+  --shadow: 0 24px 60px rgba(var(--theme-primary-rgb), 0.12);
+  --shadow-soft: 0 18px 42px rgba(var(--theme-primary-rgb), 0.08);
+  --font-sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SFMono-Regular", "Consolas", monospace;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+* {
+  box-sizing: border-box;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #ededed;
-    --foreground: #0c0c0c;
-    --primary: #c9c9c9;
-  }
+html {
+  min-height: 100%;
+  background:
+    radial-gradient(circle at top left, rgba(var(--theme-primary-rgb), 0.12), transparent 30%),
+    radial-gradient(circle at 100% 0%, rgba(var(--theme-secondary-rgb), 0.62), transparent 24%),
+    linear-gradient(180deg, #ffffff 0%, #f1f5fd 100%);
 }
 
 body {
-  background: var(--background);
+  min-height: 100vh;
+  margin: 0;
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  background:
+    linear-gradient(135deg, rgba(var(--theme-surface-rgb), 0.72), rgba(var(--theme-surface-rgb), 0.24)),
+    transparent;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+code {
+  font-family: var(--font-mono);
+}
+
+a {
+  color: inherit;
+}
+
+::selection {
+  background: rgba(var(--theme-primary-rgb), 0.16);
 }

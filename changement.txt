@@ -1,0 +1,66 @@
+Liste des changements - 2026-03-25
+
+1. Objectif du refacto
+- Fusion du panel client et du panel administrateur dans un seul frontend.
+- Reutilisation des memes composants React pour les deux roles.
+- Conservation d'un dashboard administrateur complet.
+- Adaptation dynamique du dashboard selon le role connecte.
+
+2. Frontend unifie
+- Le frontend principal est maintenant le point d'entree unique du panel.
+- Le login partage est servi depuis /signin.
+- Les routes /login et /Login redirigent vers /signin.
+- Le dashboard utilise le meme shell et les memes composants pour ADMIN et CLIENT.
+- Les anciennes pages du frontend ont ete redirigees vers le nouveau dashboard unifie.
+
+3. Comportement par role
+- ADMIN:
+  acces complet a la gestion des utilisateurs, des biens et des refresh tokens.
+- CLIENT:
+  acces a "Mon compte" et "Mes biens" uniquement.
+- Le client peut creer, modifier et supprimer uniquement ses propres biens.
+- Le client ne peut pas voir ni modifier les biens des autres utilisateurs.
+
+4. Backend et securite
+- Ajout des roles CLIENT et ADMIN dans Prisma.
+- Ajout du role dans le JWT.
+- Ajout de guards et de controle d'autorisation cote backend.
+- Ajout de /user/me pour recuperer le profil courant.
+- Ajout de /property/me pour recuperer uniquement les biens du client connecte.
+- Ajout de ownerId sur les proprietes pour rattacher un bien a son proprietaire.
+- Blocage backend si un client tente de modifier ou supprimer un bien qui ne lui appartient pas.
+
+5. Donnees et migrations
+- Ajout des migrations Prisma pour:
+  initialisation,
+  ajout des roles,
+  ajout du proprietaire de bien.
+- Le backend en Docker demarre maintenant avec prisma migrate deploy.
+
+6. Docker et runtime
+- docker-compose utilise maintenant un seul service frontend principal.
+- L'ancien service frontend_admin a ete retire du runtime Docker.
+- Correction du Dockerfile du frontend.
+- Suppression de la dependance Tailwind native problematique dans le conteneur frontend.
+- Correction de la config PostCSS pour un demarrage propre en Docker.
+
+7. Comptes de test
+- Admin:
+  email = test@test.fr
+  mot de passe = test
+- Client:
+  email = client@test.fr
+  mot de passe = test
+
+8. Verification effectuee
+- Build backend OK.
+- Build frontend OK.
+- Demarrage Docker OK pour database, backend et frontend.
+- Login ADMIN verifie.
+- Login CLIENT verifie.
+- Verification que /property/me ne retourne que les biens du client.
+- Verification qu'un client recoit bien une erreur 403 s'il tente de modifier un bien tiers.
+
+9. Etat actuel
+- Le projet fonctionne maintenant avec un panel unique.
+- Le dossier frontend_admin est encore present dans le repo, mais il n'est plus utilise par docker-compose.

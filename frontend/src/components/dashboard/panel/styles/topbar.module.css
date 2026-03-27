@@ -1,0 +1,112 @@
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid rgba(var(--theme-primary-rgb), 0.12);
+  border-radius: 30px;
+  padding: 0.4rem 1.5rem;
+  background: rgba(var(--theme-surface-rgb), 0.92);
+  box-shadow: var(--shadow-soft);
+  height: 20vh;
+}
+
+.heading {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.7rem;
+}
+
+.copy {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.searchField {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 280px;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(var(--theme-primary-rgb), 0.12);
+  background: rgba(var(--theme-surface-rgb), 0.88);
+  border-radius: 16px;
+}
+
+.searchIcon {
+  width: 1rem;
+  height: 1rem;
+  color: var(--muted);
+}
+
+.searchInput {
+  width: 100%;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  color: var(--foreground);
+  outline: none;
+}
+
+.logoutButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid rgba(var(--theme-primary-rgb), 0.12);
+  border-radius: 16px;
+  padding: 0.85rem 1rem;
+  background: rgba(var(--theme-surface-rgb), 0.82);
+  color: var(--foreground);
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 180ms ease, border-color 180ms ease, background-color 180ms ease;
+}
+
+.logoutButton:hover {
+  transform: translateY(-1px);
+  border-color: rgba(var(--theme-primary-rgb), 0.22);
+}
+
+.buttonIcon {
+  width: 1rem;
+  height: 1rem;
+}
+
+@media (max-width: 860px) {
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .actions {
+    width: 100%;
+  }
+
+  .searchField {
+    min-width: 100%;
+  }
+}

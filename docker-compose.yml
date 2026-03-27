@@ -27,6 +27,8 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL}
       PORT: ${SERVER_PORT}
+      JWT_SECRET: ${JWT_SECRET}
+      UPLOAD_DIR: /usr/src/app/uploads
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"
     depends_on:
@@ -56,18 +58,23 @@ services:
       database:
         condition: service_healthy
 
-  # front:
-  #   container_name: frontend
-  #   build:
-  #     context: ./frontend
-  #     dockerfile: Dockerfile
-  #   restart: always
-  #   volumes:
-  #     - ./frontend:/app
-  #   depends_on:
-  #     - server
-  #   ports:
-  #     - "${FRONTEND_PORT}:${FRONTEND_PORT}"
+  front:
+    container_name: frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: always
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - server
+    environment:
+      NEXT_PUBLIC_API_URL: "http://localhost:${SERVER_PORT:-3001}"
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    networks:
+      - NeoImmo-docker
 
   # redis:
   #   container_name: redis

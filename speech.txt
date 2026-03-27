@@ -1,0 +1,61 @@
+bonjours a tous :
+
+HOOK: 
+
+mes camarades et moi sommes partie d’une idée folle. 
+
+Imaginez, qui que vous soyez, posséder une partie d’un immeuble, directement depuis votre téléphone.
+
+message principal : 
+
+une idée folle basée sur un postulat millénaire qui est que l’investissement sur des actifs real “la pierre” est le plus sur.
+
+Problème :
+
+On nous répète que l’immobilier est l’un des meilleurs moyens de construire du patrimoine. Pourtant, pour un étudiant — ou pour [adapter : salarié, entrepreneur, etc.] — cela reste presque inaccessible. Les prix sont élevés, la demande explose, et le capital nécessaire pour se lancer est tout simplement hors de portée.
+
+Solution :
+
+Aujourd’hui, avec la digitalisation de la finance “communément appelée les fintechs” et l’essor des technologies blockchain, il devient enfin possible de repenser l’accès à ce type d’investissement.
+
+Et c’est exactement là que notre idée prend tout son sens.
+
+Neoimmo permet à n’importe qui d’investir dans l’immobilier, en achetant une fraction d’un bien, en un seul clic, sans avoir besoin d’un capital important.
+
+Concrètement, vous achetez une part d’un bien, et vous percevez une part des loyers, proportionnelle à votre investissement.
+
+Pour rendre cela possible à grande échelle, nous utilisons la blockchain. Les transactions se font en cryptomonnaie, via des smart contracts, ce qui permet d’automatiser entièrement la gestion : distribution des loyers, traçabilité des parts, et sécurisation des échanges.
+
+Résultat : plus de transparence, moins d’intermédiaires, et une gestion beaucoup plus simple et efficace.
+
+Ce mécanisme de propriété partagée existe déjà, mais il est aujourd’hui limité et complexe. Notre objectif est de le rendre fluide et pour un plus grand nombre de personnes.
+
+---
+
+Différenciation :
+
+Là où Neoimmo se distingue, c’est sur le niveau d’accessibilité  et la manière de découper l’investissement.
+
+Contrairement aux solutions existantes, nous proposons des fractions beaucoup plus fines, ce qui permet de réduire significativement le ticket d’entrée et donc l’investissement individuel nécessaire.
+
+De plus, les formes classiques de propriété partagée peuvent devenir contraignantes : lorsqu’on investit à plusieurs, on s’engage souvent dans une forme de ‘mariage’ financier, où la sortie d’un associé ou un désaccord peut rapidement compliquer la gestion.
+
+Avec Neoimmo, cette gestion est centralisée et organisée au sein de la plateforme, avec une logique communautaire : les décisions importantes concernant un bien, comme une vente ou des travaux, peuvent être prises collectivement via des mécanismes de vote à la majorité. Cela permet d’éviter les blocages tout en gardant une gestion cohérente et structurée.
+
+Neoimmo apporte une alternative plus flexible, avec des parts clairement définies, plus simples à gérer et à échanger, limitant ainsi ces blocages.
+
+Enfin, pour les profils financiers parmi nous, cela s’inscrit dans un modèle hautement scalable, renforcé par l’effet de levier.
+
+Projection: 
+
+À terme, l’objectif est de permettre à chacun de construire un portefeuille immobilier diversifié, sans les contraintes traditionnelles de gestion ni les barrières à l’entrée.
+
+Conclusion:
+
+Neoimmo vise à transformer un marché historiquement rendu difficile d’accès en une opportunité ouverte, plus flexible et plus transparente, en combinant fractionnement de l’investissement et automatisation via la blockchain. L’idée est de simplifier l’accès à l’immobilier tout en conservant les avantages d’un actif réel.
+
+Call to action:
+
+Aujourd’hui, nous cherchons à valider ce concept avec des premiers utilisateurs et à recueillir des retours concrets afin d’améliorer la plateforme et préparer son développement à plus grande échelle.
+
+N’hésitez pas à nous suivre sur Instagram afin de rester informés des prochaines étapes et de l’évolution du projet.

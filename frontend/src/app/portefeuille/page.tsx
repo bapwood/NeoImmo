@@ -1,10 +1,5 @@
-import * as React from 'react';
+import LandingPage from './LandingPage';
 
-export default function Wallet() {
-
-  return (
-    <div>
-      page de portefeuille
-    </div>
-  );
+export default function PortefeuillePage() {
+  return <LandingPage />;
 }
