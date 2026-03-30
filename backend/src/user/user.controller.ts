@@ -15,6 +15,7 @@ import { Roles } from 'src/auth/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import type { AuthenticatedRequest } from 'src/auth/types/authenticated-request';
+import { SetUserRestrictionDto } from './dto/set-user-restriction.dto';
 import { CreateUserDto, UpdateUserDto } from './dto/user.dtos';
 import { UserService } from './user.service';
 
@@ -82,6 +83,18 @@ export class UserController {
   @ApiResponse({ status: 500, description: 'Could not update the user' })
   updateUser(@Param('id') id: string, @Body() userDto: UpdateUserDto) {
     return this.userService.updateUser(Number(id), userDto);
+  }
+
+  @Post(':id/restriction')
+  @Roles(Role.ADMIN)
+  @ApiResponse({ status: 200, description: 'The user restriction has been updated' })
+  @ApiResponse({ status: 400, description: 'Admins cannot be restricted' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  setUserRestriction(
+    @Param('id') id: string,
+    @Body() payload: SetUserRestrictionDto,
+  ) {
+    return this.userService.setUserRestriction(Number(id), payload.restricted);
   }
 
   @Delete(':id')

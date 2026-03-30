@@ -543,6 +543,58 @@ export default function DashboardPanel({
     }
   }
 
+  async function handleToggleUserRestriction(row: TableRow) {
+    if (!session || activeResource?.key !== 'user') {
+      return;
+    }
+
+    const rowId = Number(row[activeResource.idKey]);
+    const currentlyRestricted = Boolean(row.isRestricted);
+    const actionLabel = currentlyRestricted
+      ? 'lever la restriction'
+      : 'restreindre ce compte';
+
+    if (!window.confirm(`Confirmer: ${actionLabel} ?`)) {
+      return;
+    }
+
+    setNotice(null);
+
+    try {
+      await requestJson<UserRecord>(
+        `/user/${encodeURIComponent(String(rowId))}/restriction`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            restricted: !currentlyRestricted,
+          }),
+        },
+        session,
+      );
+
+      await reloadResource('user');
+      setNotice({
+        tone: 'success',
+        message: currentlyRestricted
+          ? 'La restriction a été levée.'
+          : 'L’utilisateur a été restreint.',
+      });
+    } catch (error) {
+      if (error instanceof ApiError && error.code === 'AUTH_EXPIRED') {
+        await kickToLogin();
+        return;
+      }
+
+      setNotice({
+        tone: 'error',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Impossible de modifier la restriction utilisateur.',
+      });
+    }
+  }
+
   function handleLogout() {
     clearStoredSession();
     router.replace('/signin');
@@ -726,6 +778,7 @@ export default function DashboardPanel({
             onEditRow={handleEdit}
             onOpenPropertyStatus={handleOpenPropertyStatus}
             onReloadResource={() => void reloadResource(activeResource.key)}
+            onToggleUserRestriction={(row) => void handleToggleUserRestriction(row)}
           />
         ) : null}
       </section>

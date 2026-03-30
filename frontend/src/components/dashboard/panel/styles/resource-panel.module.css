@@ -256,6 +256,30 @@
   letter-spacing: 0.08em;
 }
 
+.activePill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  background: rgba(42, 150, 92, 0.14);
+  color: #1f7a4d;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.restrictedPill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  background: rgba(198, 64, 78, 0.14);
+  color: #b33645;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
 .formActions {
   display: flex;
   gap: 0.7rem;

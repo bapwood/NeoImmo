@@ -16,6 +16,7 @@ type DashboardResourcePanelProps = {
   onEditRow: (row: TableRow) => void;
   onOpenPropertyStatus: (row: TableRow) => void;
   onReloadResource: () => void;
+  onToggleUserRestriction: (row: TableRow) => void;
 };
 
 export default function DashboardResourcePanel({
@@ -28,6 +29,7 @@ export default function DashboardResourcePanel({
   onEditRow,
   onOpenPropertyStatus,
   onReloadResource,
+  onToggleUserRestriction,
 }: DashboardResourcePanelProps) {
   const canEditInline =
     activeResource.allowEdit &&
@@ -62,6 +64,14 @@ export default function DashboardResourcePanel({
       return (
         <span className={value === 'ADMIN' ? styles.rolePillAdmin : styles.rolePillClient}>
           {value}
+        </span>
+      );
+    }
+
+    if (column.key === 'isRestricted' && typeof value === 'boolean') {
+      return (
+        <span className={value ? styles.restrictedPill : styles.activePill}>
+          {value ? 'Restreint' : 'Actif'}
         </span>
       );
     }
@@ -155,6 +165,19 @@ export default function DashboardResourcePanel({
                               Statut
                             </button>
                           ) : null}
+                          {activeResource.key === 'user' && row.role === 'CLIENT' ? (
+                            <button
+                              type="button"
+                              className={
+                                row.isRestricted ? styles.tableButton : styles.tableButtonDanger
+                              }
+                              onClick={() => onToggleUserRestriction(row)}
+                            >
+                              {row.isRestricted
+                                ? 'Lever la restriction'
+                                : 'Restreindre'}
+                            </button>
+                          ) : null}
                           {canEditInline ? (
                             <button
                               type="button"
@@ -187,28 +210,6 @@ export default function DashboardResourcePanel({
           </table>
         </div>
       </div>
-
-      {activeResource.key !== 'property' ? (
-        <aside className={styles.formPanel}>
-          <div className={styles.header}>
-            <div>
-              <div className={styles.eyebrow}>Navigation</div>
-              <h3 className={styles.title}>Gestion {activeResource.label}</h3>
-              <p className={styles.copy}>Utilisez la page dédiée pour créer ou modifier les éléments.</p>
-            </div>
-          </div>
-
-          <div className={styles.formActions}>
-            {activeResource.key === 'user' ? (
-              <span className={styles.cellMuted}>
-                Les écrans dédiés à la gestion avancée des utilisateurs ne sont pas encore exposés ici.
-              </span>
-            ) : (
-              <span className={styles.cellMuted}>—</span>
-            )}
-          </div>
-        </aside>
-      ) : null}
     </section>
   );
 }

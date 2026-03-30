@@ -208,6 +208,7 @@ const adminUserResource: ResourceConfig = {
   columns: [
     { key: 'id', label: 'ID', kind: 'number' },
     { key: 'email', label: 'Email' },
+    { key: 'isRestricted', label: 'Statut' },
     { key: 'role', label: 'Rôle', kind: 'role' },
     { key: 'firstName', label: 'Prénom' },
     { key: 'lastName', label: 'Nom' },

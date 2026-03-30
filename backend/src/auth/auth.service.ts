@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -12,6 +13,9 @@ import { UserService } from 'src/user/user.service';
 import { v4 as uuidv4 } from 'uuid';
 import { RegisterDto } from './dtos/register.dto';
 import { SignInDto } from './dtos/signin.dtos';
+
+const restrictedAccountMessage =
+  'Votre compte est restreint. Contactez le support pour réactiver votre accès.';
 
 @Injectable()
 export class AuthService {
@@ -35,6 +39,10 @@ export class AuthService {
 
     if (!passwordMatch) {
       throw new UnauthorizedException('Wrong credentials');
+    }
+
+    if (existingUser.isRestricted) {
+      throw new ForbiddenException(restrictedAccountMessage);
     }
 
     const tokens = await this.generateUserTokens(
@@ -129,6 +137,15 @@ export class AuthService {
       });
 
       throw new UnauthorizedException('Refresh token expired');
+    }
+
+    if (existingToken.user.isRestricted) {
+      await this.prisma.refreshToken.deleteMany({
+        where: {
+          userId: existingToken.userId,
+        },
+      });
+      throw new ForbiddenException(restrictedAccountMessage);
     }
 
     const tokens = await this.generateUserTokens(

@@ -153,6 +153,44 @@ export class UserService {
     }
   }
 
+  async setUserRestriction(id: number, restricted: boolean): Promise<PublicUser> {
+    const user = await this.getUserEntityById(id);
+
+    if (!user) {
+      throw new HttpException(
+        {
+          status: HttpStatus.NOT_FOUND,
+          error: 'User not found',
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    if (user.role === 'ADMIN') {
+      throw new BadRequestException('Les comptes administrateur ne peuvent pas être restreints.');
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: {
+        id,
+      },
+      data: {
+        isRestricted: restricted,
+        restrictedAt: restricted ? new Date() : null,
+      },
+    });
+
+    if (restricted) {
+      await this.prisma.refreshToken.deleteMany({
+        where: {
+          userId: id,
+        },
+      });
+    }
+
+    return this.toPublicUser(updatedUser);
+  }
+
   private extractProfileFields(data: CreateUserDto | UpdateUserDto) {
     return {
       firstName: data.firstName,

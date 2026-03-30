@@ -48,6 +48,8 @@ export type UserRecord = {
   walletStatus?: WalletStatus | null;
   walletVerifiedAt?: string | null;
   kycSyncedAt?: string | null;
+  isRestricted?: boolean;
+  restrictedAt?: string | null;
 };
 
 export type PropertyRecord = {

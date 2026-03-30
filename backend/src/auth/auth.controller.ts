@@ -15,6 +15,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Login ok' })
   @ApiResponse({ status: 400, description: 'Missing/Wrong credentials' })
   @ApiResponse({ status: 401, description: 'Wrong credentials' })
+  @ApiResponse({ status: 403, description: 'Restricted account' })
   login(@Body() signInDto: SignInDto) {
     return this.authService.signIn(signInDto);
   }
@@ -37,6 +38,7 @@ export class AuthController {
   @ApiResponse({ status: 201, description: 'Token refreshed' })
   @ApiResponse({ status: 400, description: 'Missing refresh token' })
   @ApiResponse({ status: 401, description: 'Wrong refresh token' })
+  @ApiResponse({ status: 403, description: 'Restricted account' })
   async refreshTokens(@Body() refreshTokenDto: RefreshTokenDto) {
     return this.authService.refreshTokens(refreshTokenDto.token);
   }

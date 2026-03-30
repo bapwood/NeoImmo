@@ -81,6 +81,8 @@ model User {
   walletStatus WalletStatus  @default(UNSET)
   walletVerifiedAt DateTime?
   kycSyncedAt  DateTime?
+  isRestricted Boolean      @default(false)
+  restrictedAt DateTime?
   refreshToken RefreshToken?
   properties   Property[]
   blockchainOperations BlockchainOperation[]
