@@ -24,6 +24,7 @@ export const PROPERTY_SHARES_ABI = [
   'function transfer(address to, uint256 amount) returns (bool)',
   'function transferFrom(address from, address to, uint256 amount) returns (bool)',
   'function balanceOf(address account) view returns (uint256)',
+  'function totalSupply() view returns (uint256)',
 ] as const;
 
 export const MARKETPLACE_TYPES = {
@@ -35,6 +36,19 @@ export const MARKETPLACE_TYPES = {
     { name: 'amount', type: 'uint256' },
     { name: 'price', type: 'uint256' },
     { name: 'currency', type: 'string' },
+    { name: 'nonce', type: 'uint256' },
+    { name: 'deadline', type: 'uint256' },
+  ],
+};
+
+export const ADMIN_PROPERTY_DEPLOY_TYPES = {
+  AdminPropertyAction: [
+    { name: 'action', type: 'string' },
+    { name: 'adminWallet', type: 'address' },
+    { name: 'propertyId', type: 'uint256' },
+    { name: 'propertyName', type: 'string' },
+    { name: 'symbol', type: 'string' },
+    { name: 'metadataHash', type: 'bytes32' },
     { name: 'nonce', type: 'uint256' },
     { name: 'deadline', type: 'uint256' },
   ],

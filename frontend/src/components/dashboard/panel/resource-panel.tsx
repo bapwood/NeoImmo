@@ -14,6 +14,7 @@ type DashboardResourcePanelProps = {
   onCreateProperty: () => void;
   onDeleteRow: (row: TableRow) => void;
   onEditRow: (row: TableRow) => void;
+  onOpenPropertyStatus: (row: TableRow) => void;
   onReloadResource: () => void;
 };
 
@@ -25,6 +26,7 @@ export default function DashboardResourcePanel({
   onCreateProperty,
   onDeleteRow,
   onEditRow,
+  onOpenPropertyStatus,
   onReloadResource,
 }: DashboardResourcePanelProps) {
   const canEditInline =
@@ -138,6 +140,21 @@ export default function DashboardResourcePanel({
                       ))}
                       <td>
                         <div className={styles.tableActions}>
+                          {activeResource.key === 'property' ? (
+                            <button
+                              type="button"
+                              className={
+                                row.tokenizationStatus === 'ACTIVE' &&
+                                typeof row.contractAddress === 'string' &&
+                                row.contractAddress.length > 0
+                                  ? styles.statusButtonActive
+                                  : styles.statusButtonInactive
+                              }
+                              onClick={() => onOpenPropertyStatus(row)}
+                            >
+                              Statut
+                            </button>
+                          ) : null}
                           {canEditInline ? (
                             <button
                               type="button"

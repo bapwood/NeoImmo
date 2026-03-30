@@ -3,6 +3,10 @@
 import type { KeyboardEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { resolveAssetUrl } from '@/src/lib/api';
+import {
+  getOpportunityAvailabilityLabel,
+  isOpportunityOpenForPurchase,
+} from '@/src/lib/opportunities';
 import type { PropertyRecord } from '@/src/lib/types';
 import styles from './styles/opportunity-card.module.css';
 
@@ -23,6 +27,8 @@ export default function OpportunityCard({
 }: OpportunityCardProps) {
   const router = useRouter();
   const coverImage = resolveAssetUrl(property.images[0]);
+  const openForPurchase = isOpportunityOpenForPurchase(property);
+  const availabilityLabel = getOpportunityAvailabilityLabel(property);
 
   function openDetails() {
     router.push(`/opportunites/${property.id}`);
@@ -53,7 +59,9 @@ export default function OpportunityCard({
             : undefined
         }
       >
-        <span className={styles.pill}>disponible</span>
+        <span className={openForPurchase ? styles.pillActive : styles.pillInactive}>
+          {availabilityLabel}
+        </span>
       </div>
 
       <div className={styles.content}>

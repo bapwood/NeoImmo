@@ -3,6 +3,7 @@
 import type { RefObject } from 'react';
 import type { ResourceConfig, ResourceKey } from '@/src/lib/dashboard-resources';
 import type {
+  ClientPortfolio,
   PropertyRecord,
   RefreshTokenRecord,
   UserRecord,
@@ -19,6 +20,7 @@ type DashboardOverviewPanelProps = {
   availablePropertiesLoading: boolean;
   availableResources: ResourceConfig[];
   carouselRef: RefObject<HTMLDivElement | null>;
+  clientPortfolio: ClientPortfolio | null;
   expiringSoonCount: number;
   isAdmin: boolean;
   onPanelChange: (panel: PanelKey) => void;
@@ -41,6 +43,7 @@ export default function DashboardOverviewPanel({
   availablePropertiesLoading,
   availableResources,
   carouselRef,
+  clientPortfolio,
   expiringSoonCount,
   isAdmin,
   onPanelChange,
@@ -55,12 +58,14 @@ export default function DashboardOverviewPanel({
   totalTokenValue,
   users,
 }: DashboardOverviewPanelProps) {
+  const portfolioSummary = clientPortfolio?.summary;
+
   return (
     <div className={styles.stack}>
       <section className={styles.heroPanel}>
         <div>
           <div className={styles.eyebrow}>Synthèse</div>
-          <h3 className={styles.sectionTitle}>{isAdmin ? 'Centre de pilotage' : 'Espace d’analyse'}</h3>
+          <h3 className={styles.sectionTitle}>{isAdmin ? 'Centre de pilotage' : ''}</h3>
           <p className={styles.sectionCopy}>
             {isAdmin
               ? 'Supervisez l’activité de la plateforme, la qualité du catalogue et la vie des comptes.'
@@ -97,9 +102,14 @@ export default function DashboardOverviewPanel({
                 <p>Informations clés actuellement renseignées.</p>
               </article>
               <article className={styles.heroCard}>
-                <span>Portefeuille</span>
-                <strong>{properties.length}</strong>
-                <p>Actif(s) actuellement rattaché(s) à votre compte.</p>
+                <span>Investi</span>
+                <strong>{formatCurrency(portfolioSummary?.totalInvested ?? 0)}</strong>
+                <p>{portfolioSummary?.positionsCount ?? 0} position(s) actuellement détenue(s).</p>
+              </article>
+              <article className={styles.heroCard}>
+                <span>Revenus</span>
+                <strong>{formatCurrency(portfolioSummary?.projectedMonthlyIncome ?? 0)}</strong>
+                <p>Projection mensuelle actuelle de votre portefeuille.</p>
               </article>
               <article className={styles.heroCard}>
                 <span>Opportunités</span>

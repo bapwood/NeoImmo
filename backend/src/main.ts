@@ -29,12 +29,27 @@ async function bootstrap() {
   });
 
   const config = new DocumentBuilder()
-    .setTitle('NeoImmo backend routes')
-    .setDescription('all the reference for the APIs routes of NeoImmo')
+    .setTitle('NeoImmo backend API')
+    .setDescription(
+      'Reference of the NeoImmo backend routes, including the crypto orchestration layer that drives the local Hardhat contracts.',
+    )
     .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description: 'JWT access token returned by /auth/login',
+      },
+      'access-token',
+    )
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, documentFactory);
+  SwaggerModule.setup('api', app, documentFactory, {
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
+  });
 
   await app.listen(process.env.PORT ?? 3000);
 }

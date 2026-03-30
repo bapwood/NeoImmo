@@ -26,8 +26,6 @@ export default function DashboardOpportunitiesPanel({
             consultez chaque fiche pour approfondir votre lecture.
           </p>
         </div>
-
-        <span className={styles.count}>{properties.length}</span>
       </div>
 
       {availablePropertiesLoading ? (

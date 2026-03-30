@@ -49,6 +49,11 @@ enum BlockchainOperationStatus {
   CANCELLED
 }
 
+enum PortfolioRevenueStatus {
+  PROJECTED
+  PAID
+}
+
 model User {
   id           Int           @id @default(autoincrement())
   email        String        @unique
@@ -79,6 +84,8 @@ model User {
   refreshToken RefreshToken?
   properties   Property[]
   blockchainOperations BlockchainOperation[]
+  portfolioPositions PortfolioPosition[]
+  portfolioRevenues PortfolioRevenue[]
 }
 
 model RefreshToken {
@@ -116,6 +123,8 @@ model Property {
   keyPoints      KeyPoint[]
   owner          User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   blockchainOperations BlockchainOperation[]
+  portfolioPositions PortfolioPosition[]
+  portfolioRevenues PortfolioRevenue[]
 }
 
 model KeyPoint {
@@ -148,4 +157,44 @@ model BlockchainOperation {
   updatedAt  DateTime @updatedAt
   property   Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
   user       User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model PortfolioPosition {
+  id                     Int       @id @default(autoincrement())
+  userId                 Int
+  propertyId             Int
+  tokenAmount            String
+  averageTokenPrice      Int
+  investedTotal          Int
+  projectedMonthlyIncome Int       @default(0)
+  lastPurchaseAt         DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  user                   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property               Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  revenueRecords         PortfolioRevenue[]
+
+  @@unique([userId, propertyId])
+  @@index([userId])
+  @@index([propertyId])
+}
+
+model PortfolioRevenue {
+  id         Int                   @id @default(autoincrement())
+  positionId Int
+  userId     Int
+  propertyId Int
+  month      DateTime
+  amount     Int
+  status     PortfolioRevenueStatus @default(PROJECTED)
+  label      String?
+  createdAt  DateTime              @default(now())
+  updatedAt  DateTime              @updatedAt
+  position   PortfolioPosition     @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  user       User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property   Property              @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([positionId, month])
+  @@index([userId, month])
+  @@index([propertyId, month])
 }

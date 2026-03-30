@@ -5,6 +5,30 @@ export function isAvailableOpportunity(property: PropertyRecord) {
   return property.ownerId == null;
 }
 
+export function isOpportunityOpenForPurchase(property: PropertyRecord) {
+  return (
+    isAvailableOpportunity(property) &&
+    property.tokenizationStatus === 'ACTIVE' &&
+    Boolean(property.contractAddress)
+  );
+}
+
+export function getOpportunityAvailabilityLabel(property: PropertyRecord) {
+  if (isOpportunityOpenForPurchase(property)) {
+    return 'disponible';
+  }
+
+  if (property.tokenizationStatus === 'PAUSED') {
+    return 'hors achat';
+  }
+
+  if (property.tokenizationStatus === 'DEPLOYED' || property.tokenizationStatus === 'DRAFT') {
+    return 'bientôt disponnible';
+  }
+
+  return 'indisponible';
+}
+
 export function filterOpportunities(
   properties: PropertyRecord[],
   query: string,

@@ -21,26 +21,24 @@ services:
 
   chain:
     container_name: chain
-    build:
-      context: ./crypto
-      dockerfile: Dockerfile
+    image: ghcr.io/foundry-rs/foundry:latest
     restart: always
-    command: npm run node
-    environment:
-      BLOCKCHAIN_MNEMONIC: ${BLOCKCHAIN_MNEMONIC:-test test test test test test test test test test test junk}
+    entrypoint: ["anvil"]
+    command:
+      - --host
+      - "0.0.0.0"
+      - --port
+      - "8545"
+      - --chain-id
+      - "31337"
+      - --accounts
+      - "10"
+      - --mnemonic
+      - ${BLOCKCHAIN_MNEMONIC:-test test test test test test test test test test test junk}
     ports:
       - "${HARDHAT_PORT:-8545}:8545"
-    volumes:
-      - ./crypto:/usr/src/app
-      - /usr/src/app/node_modules
     healthcheck:
-      test:
-        [
-          "CMD",
-          "node",
-          "-e",
-          "fetch('http://127.0.0.1:8545',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',method:'eth_chainId',params:[],id:1})}).then((response)=>response.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))",
-        ]
+      test: ["CMD-SHELL", "cast rpc ots_getApiLevel --rpc-url http://127.0.0.1:8545 >/dev/null 2>&1"]
       interval: 5s
       timeout: 5s
       retries: 12
@@ -130,8 +128,47 @@ services:
       - server
     environment:
       NEXT_PUBLIC_API_URL: "http://localhost:${SERVER_PORT:-3001}"
+      NEXT_PUBLIC_EXPLORER_BASE_URL: "http://localhost:${OTTERSCAN_PORT:-5100}"
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
+    networks:
+      - NeoImmo-docker
+
+  otterscan:
+    container_name: otterscan
+    image: otterscan/otterscan:latest
+    restart: always
+    depends_on:
+      chain:
+        condition: service_healthy
+    environment:
+      OTS2: "false"
+      OTTERSCAN_CONFIG: >-
+        {
+          "erigonURL": "http://localhost:${HARDHAT_PORT:-8545}",
+          "experimentalFixedChainId": 31337,
+          "branding": {
+            "siteName": "NeoImmo Explorer",
+            "networkTitle": "Local Devnet",
+            "hideAnnouncements": true
+          },
+          "chainInfo": {
+            "name": "NeoImmo Local Devnet",
+            "faucets": [],
+            "nativeCurrency": {
+              "name": "Ether",
+              "symbol": "ETH",
+              "decimals": 18
+            }
+          },
+          "externalDataSources": {
+            "ccip": {
+              "ensLookups": false
+            }
+          }
+        }
+    ports:
+      - "${OTTERSCAN_PORT:-5100}:80"
     networks:
       - NeoImmo-docker
 

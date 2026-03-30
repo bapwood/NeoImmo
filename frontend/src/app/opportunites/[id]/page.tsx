@@ -5,8 +5,14 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { readStoredSession } from '@/src/lib/auth';
 import { ApiError, resolveAssetUrl } from '@/src/lib/api';
-import { fetchOpportunityById } from '@/src/lib/opportunities';
-import type { PropertyRecord } from '@/src/lib/types';
+import { buildExplorerAddressUrl } from '@/src/lib/explorer';
+import {
+  fetchOpportunityById,
+  getOpportunityAvailabilityLabel,
+  isOpportunityOpenForPurchase,
+} from '@/src/lib/opportunities';
+import type { AuthSession, PropertyRecord } from '@/src/lib/types';
+import ClientPurchasePanel from '@/src/components/dashboard/client-purchase-panel';
 import styles from './styles/page.module.css';
 
 function formatCurrency(value: number) {
@@ -38,6 +44,7 @@ function GalleryArrowIcon({ direction }: { direction: 'left' | 'right' }) {
 export default function OpportunityDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const [session, setSession] = useState<AuthSession | null>(null);
   const [property, setProperty] = useState<PropertyRecord | null>(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -53,6 +60,8 @@ export default function OpportunityDetailPage() {
         router.replace('/signin');
         return;
       }
+
+      setSession(session);
 
       const propertyId = Number(params.id);
 
@@ -148,6 +157,8 @@ export default function OpportunityDetailPage() {
   const safeActiveImageIndex =
     hasGallery && activeImageIndex >= imageCount ? 0 : activeImageIndex;
   const heroImage = hasGallery ? property.images[safeActiveImageIndex] : null;
+  const openForPurchase = isOpportunityOpenForPurchase(property);
+  const availabilityLabel = getOpportunityAvailabilityLabel(property);
 
   function showPreviousImage() {
     if (imageCount <= 1) {
@@ -173,7 +184,6 @@ export default function OpportunityDetailPage() {
     <main className={styles.pageShell}>
       <div className={styles.pageHeader}>
         <div>
-          <div className={styles.eyebrow}>Fiche actif</div>
           <h1>{property.name}</h1>
           <p className={styles.headerCopy}>
             Analyse détaillée d’un actif disponible au catalogue NeoImmo.
@@ -209,7 +219,9 @@ export default function OpportunityDetailPage() {
                 : undefined
             }
           >
-            <span className={styles.statusPill}>Disponible</span>
+            <span className={openForPurchase ? styles.statusPillActive : styles.statusPillInactive}>
+              {availabilityLabel}
+            </span>
             {imageCount > 1 ? (
               <>
                 <button
@@ -302,7 +314,42 @@ export default function OpportunityDetailPage() {
               <span>Volume proposé</span>
               <strong>{property.tokenNumber} tokens</strong>
             </div>
+            <div>
+              <span>Statut achat</span>
+              <strong>{openForPurchase ? 'Ouvert aux clients' : 'Retiré de l’achat'}</strong>
+            </div>
           </div>
+
+          {(property.contractAddress || session?.user.walletAddress) ? (
+            <div className={styles.summaryActions}>
+              {property.contractAddress ? (
+                <a
+                  href={buildExplorerAddressUrl(property.contractAddress)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={styles.summaryLink}
+                >
+                  Voir le contrat
+                </a>
+              ) : null}
+              {session?.user.walletAddress ? (
+                <a
+                  href={buildExplorerAddressUrl(session.user.walletAddress)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={styles.summaryLink}
+                >
+                  Voir l’adresse wallet
+                </a>
+              ) : null}
+            </div>
+          ) : null}
+
+          {!openForPurchase ? (
+            <div className={styles.purchaseNotice}>
+              Cet actif reste visible au catalogue, mais il n’est pas actuellement ouvert à l’achat client.
+            </div>
+          ) : null}
         </article>
       </section>
 
@@ -335,6 +382,12 @@ export default function OpportunityDetailPage() {
           )}
         </article>
       </section>
+
+      <ClientPurchasePanel
+        property={property}
+        session={session}
+        onPurchaseSuccess={() => router.push('/?panel=property')}
+      />
     </main>
   );
 }

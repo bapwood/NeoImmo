@@ -141,6 +141,22 @@ export default function DashboardProfilePanel({
     setFormState(buildFormState(resource, user));
   }, [resource, user]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined' || window.location.hash !== '#wallet-on-chain') {
+      return;
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      document
+        .getElementById('wallet-on-chain')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [resource, user]);
+
   function handleInputChange(
     event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
   ) {
@@ -279,7 +295,15 @@ export default function DashboardProfilePanel({
                 .filter((field): field is FieldConfig => Boolean(field));
 
               return (
-                <section key={section.key} className={styles.sectionCard}>
+                <section
+                  key={section.key}
+                  id={section.key === 'wallet' ? 'wallet-on-chain' : undefined}
+                  className={
+                    section.key === 'wallet'
+                      ? `${styles.sectionCard} ${styles.anchorSection}`
+                      : styles.sectionCard
+                  }
+                >
                   <div>
                     <div className={styles.eyebrow}>{section.title}</div>
                     <h4>{section.title}</h4>

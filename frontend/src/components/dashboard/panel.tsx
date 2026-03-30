@@ -25,6 +25,7 @@ import {
 } from '@/src/lib/opportunities';
 import type {
   AuthSession,
+  ClientPortfolio,
   PanelUser,
   PropertyRecord,
   RefreshTokenRecord,
@@ -34,6 +35,7 @@ import type {
 import DashboardLoader from './panel/loader';
 import DashboardOpportunitiesPanel from './panel/opportunities-panel';
 import DashboardOverviewPanel from './panel/overview-panel';
+import DashboardPortfolioPanel from './panel/portfolio-panel';
 import DashboardProfilePanel from './panel/profile-panel';
 import DashboardResourcePanel from './panel/resource-panel';
 import DashboardSidebar from './panel/sidebar';
@@ -70,6 +72,9 @@ export default function DashboardPanel({
   const [availablePropertiesError, setAvailablePropertiesError] = useState<string | null>(
     null,
   );
+  const [clientPortfolio, setClientPortfolio] = useState<ClientPortfolio | null>(null);
+  const [clientPortfolioLoading, setClientPortfolioLoading] = useState(false);
+  const [clientPortfolioError, setClientPortfolioError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [notice, setNotice] = useState<Notice>(null);
   const availableCarouselRef = useRef<HTMLDivElement | null>(null);
@@ -117,6 +122,9 @@ export default function DashboardPanel({
     setAvailableProperties([]);
     setAvailablePropertiesError(null);
     setAvailablePropertiesLoading(false);
+    setClientPortfolio(null);
+    setClientPortfolioError(null);
+    setClientPortfolioLoading(false);
     router.replace(unauthenticatedRedirectPath);
   }
 
@@ -168,6 +176,41 @@ export default function DashboardPanel({
       );
     } finally {
       setAvailablePropertiesLoading(false);
+    }
+  }
+
+  async function loadClientPortfolio(currentSession: AuthSession) {
+    if (currentSession.user.role !== 'CLIENT') {
+      setClientPortfolio(null);
+      setClientPortfolioError(null);
+      setClientPortfolioLoading(false);
+      return;
+    }
+
+    setClientPortfolioLoading(true);
+    setClientPortfolioError(null);
+
+    try {
+      const portfolio = await requestJson<ClientPortfolio>(
+        '/portfolio/me',
+        undefined,
+        currentSession,
+      );
+      setClientPortfolio(portfolio);
+    } catch (error) {
+      if (error instanceof ApiError && error.code === 'AUTH_EXPIRED') {
+        await kickToLogin();
+        return;
+      }
+
+      setClientPortfolio(null);
+      setClientPortfolioError(
+        error instanceof Error
+          ? error.message
+          : 'Impossible de charger le portefeuille client.',
+      );
+    } finally {
+      setClientPortfolioLoading(false);
     }
   }
 
@@ -315,7 +358,10 @@ export default function DashboardPanel({
         setActiveResourceKey(
           getResourceConfigsForRole(nextSession.user.role)[0]?.key ?? 'user',
         );
-        await loadAllResources(nextSession);
+        await Promise.all([
+          loadAllResources(nextSession),
+          loadClientPortfolio(nextSession),
+        ]);
       } catch {
         if (!cancelled) {
           clearStoredSession();
@@ -411,6 +457,16 @@ export default function DashboardPanel({
     });
   }
 
+  function handleOpenWalletSettings() {
+    startTransition(() => {
+      setActivePanel('user');
+      setActiveResourceKey('user');
+      setQuery('');
+      setPanelParam('user');
+      router.replace('/?panel=user#wallet-on-chain');
+    });
+  }
+
   function handleEdit(row: TableRow) {
     if (!activeResource?.allowEdit) {
       return;
@@ -424,6 +480,16 @@ export default function DashboardPanel({
     }
 
     setNotice(null);
+  }
+
+  function handleOpenPropertyStatus(row: TableRow) {
+    const rowId = row[activeResource?.idKey ?? 'id'];
+
+    if (activeResource?.key !== 'property' || rowId == null) {
+      return;
+    }
+
+    router.push(`/actifs/${encodeURIComponent(String(rowId))}/tokenisation`);
   }
 
   async function handleDelete(row: TableRow) {
@@ -506,7 +572,10 @@ export default function DashboardPanel({
   }
 
   const totalTokenValue = properties.reduce(
-    (sum, property) => sum + property.tokenNumber * property.tokenPrice,
+    (sum, property) =>
+      typeof property.tokenNumber === 'number' && typeof property.tokenPrice === 'number'
+        ? sum + property.tokenNumber * property.tokenPrice
+        : sum,
     0,
   );
   const expiringSoonCount = refreshTokens.filter((token) => {
@@ -516,6 +585,11 @@ export default function DashboardPanel({
   const adminCount = users.filter((user) => user.role === 'ADMIN').length;
   const profileCompletion = getClientProfileCompletion(session?.user);
   const profileCompletionTotal = getClientProfileCompletionTotal();
+  const isClientPortfolioPanel =
+    !isAdmin &&
+    activePanel !== 'overview' &&
+    activePanel !== 'opportunities' &&
+    activeResource?.key === 'property';
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -571,8 +645,10 @@ export default function DashboardPanel({
           activeResource={activeResource}
           isAdmin={isAdmin}
           onLogout={handleLogout}
+          onOpenWalletSettings={handleOpenWalletSettings}
           onQueryChange={setQuery}
           query={query}
+          session={session}
         />
 
         {activePanel === 'overview' ? (
@@ -583,6 +659,7 @@ export default function DashboardPanel({
             availablePropertiesLoading={availablePropertiesLoading}
             availableResources={availableResources}
             carouselRef={availableCarouselRef}
+            clientPortfolio={clientPortfolio}
             expiringSoonCount={expiringSoonCount}
             isAdmin={isAdmin}
             onPanelChange={handlePanelChange}
@@ -609,6 +686,19 @@ export default function DashboardPanel({
 
         {activePanel !== 'overview' &&
         activePanel !== 'opportunities' &&
+        isClientPortfolioPanel ? (
+          <DashboardPortfolioPanel
+            error={clientPortfolioError}
+            loading={clientPortfolioLoading}
+            onOpenOpportunities={() => handlePanelChange('opportunities')}
+            onReload={() => void loadClientPortfolio(session)}
+            portfolio={clientPortfolio}
+            walletAddress={session.user.walletAddress}
+          />
+        ) : null}
+
+        {activePanel !== 'overview' &&
+        activePanel !== 'opportunities' &&
         activeResource?.key === 'user' &&
         activeResource.singleton &&
         activeUserProfile ? (
@@ -624,6 +714,7 @@ export default function DashboardPanel({
         {activePanel !== 'overview' &&
         activePanel !== 'opportunities' &&
         activeResource &&
+        !isClientPortfolioPanel &&
         !(activeResource.key === 'user' && activeResource.singleton) ? (
           <DashboardResourcePanel
             activeResource={activeResource}
@@ -633,6 +724,7 @@ export default function DashboardPanel({
             onCreateProperty={() => router.push('/actifs/nouveau')}
             onDeleteRow={(row) => void handleDelete(row)}
             onEditRow={handleEdit}
+            onOpenPropertyStatus={handleOpenPropertyStatus}
             onReloadResource={() => void reloadResource(activeResource.key)}
           />
         ) : null}

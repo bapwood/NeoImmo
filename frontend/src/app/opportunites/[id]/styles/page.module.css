@@ -117,13 +117,26 @@
     linear-gradient(135deg, rgba(var(--theme-primary-rgb), 0.94), rgba(var(--theme-primary-rgb), 0.72));
 }
 
-.statusPill {
+.statusPillActive {
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
   padding: 0.35rem 0.8rem;
   background: rgba(var(--theme-surface-rgb), 0.94);
-  color: var(--foreground);
+  color: #1f7a4d;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.statusPillInactive {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.35rem 0.8rem;
+  background: rgba(var(--theme-surface-rgb), 0.94);
+  color: #b33645;
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -279,6 +292,36 @@
   display: block;
   margin-top: 0.45rem;
   font-size: 1.1rem;
+}
+
+.summaryActions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+.summaryLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0.8rem 1rem;
+  border-radius: 16px;
+  border: 1px solid rgba(var(--theme-primary-rgb), 0.12);
+  background: rgba(var(--theme-surface-rgb), 0.92);
+  color: var(--foreground);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.purchaseNotice {
+  border-radius: 22px;
+  padding: 1rem;
+  background: rgba(198, 64, 78, 0.08);
+  border: 1px solid rgba(198, 64, 78, 0.12);
+  color: #8f3440;
+  line-height: 1.6;
 }
 
 .contentGrid {
