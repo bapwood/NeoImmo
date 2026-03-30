@@ -37,7 +37,9 @@ export default function DashboardResourcePanel({
     activeResource.key !== 'user';
   const canDeleteInline = activeResource.allowDelete;
   const layoutClassName =
-    activeResource.key === 'property' ? styles.singleColumnLayout : styles.layout;
+    activeResource.key === 'property' || activeResource.key === 'user'
+      ? styles.singleColumnLayout
+      : styles.layout;
 
   function renderCell(value: unknown, column: ResourceConfig['columns'][number]) {
     if (value == null || value === '') {
