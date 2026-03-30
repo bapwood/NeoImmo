@@ -53,21 +53,6 @@ export default function DashboardSidebar({
           );
         })}
       </nav>
-
-      <div className={styles.sessionCard}>
-        <div className={styles.eyebrow}>Session</div>
-        <strong className={styles.sessionName}>{summarizeName(session.user)}</strong>
-        <p className={styles.sessionEmail}>{session.user.email}</p>
-        <div className={styles.sessionInline}>
-          <span className={isAdmin ? styles.rolePillAdmin : styles.rolePillClient}>
-            {session.user.role}
-          </span>
-          <code>#{session.user.id}</code>
-        </div>
-        <p className={styles.sessionCopy}>
-          API cible: <code>{apiUrl}</code>
-        </p>
-      </div>
     </aside>
   );
 }
