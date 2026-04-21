@@ -115,25 +115,6 @@ services:
       database:
         condition: service_healthy
 
-  front:
-    container_name: frontend
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    restart: always
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    depends_on:
-      - server
-    environment:
-      NEXT_PUBLIC_API_URL: "http://localhost:${SERVER_PORT:-3001}"
-      NEXT_PUBLIC_EXPLORER_BASE_URL: "http://localhost:${OTTERSCAN_PORT:-5100}"
-    ports:
-      - "${FRONTEND_PORT:-3000}:3000"
-    networks:
-      - NeoImmo-docker
-
   otterscan:
     container_name: otterscan
     image: otterscan/otterscan:latest
