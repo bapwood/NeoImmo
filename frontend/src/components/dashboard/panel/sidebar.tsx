@@ -2,7 +2,6 @@
 
 import type { AuthSession } from '@/src/lib/types';
 import type { NavigationItem, PanelKey } from './types';
-import { summarizeName } from './utils';
 import styles from './styles/sidebar.module.css';
 
 type DashboardSidebarProps = {
@@ -15,12 +14,10 @@ type DashboardSidebarProps = {
 
 export default function DashboardSidebar({
   activePanel,
-  apiUrl,
   navigationItems,
   onPanelChange,
   session,
 }: DashboardSidebarProps) {
-  const isAdmin = session.user.role === 'ADMIN';
 
   return (
     <aside className={styles.sidebar}>

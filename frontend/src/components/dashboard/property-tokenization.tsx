@@ -491,7 +491,6 @@ export default function PropertyTokenization({
   const backendWalletAddress =
     propertyRecord?.backendOperatorWalletAddress ?? fundingSnapshot?.backendWalletAddress ?? null;
   const fundingReady = fundingSnapshot?.ready ?? false;
-  const fundingShortfall = safeBigInt(fundingSnapshot?.shortfallWei);
 
   if (booting) {
     return (

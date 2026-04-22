@@ -339,7 +339,7 @@ export default function LandingPage({ onAuthenticated }: LandingPageProps) {
               Connexion
             </Link>
             <a href="#signup" className={styles.primaryAction}>
-              S'inscrire
+              S&apos;inscrire
             </a>
           </div>
         </motion.header>
@@ -458,7 +458,7 @@ export default function LandingPage({ onAuthenticated }: LandingPageProps) {
               <h2>Nos offre disponibles</h2>
               <p>
                 Nous proposons un large eventails de biens disponible pour
-                l'achat fractionné
+                l&apos;achat fractionné
               </p>
             </div>
             <div className={styles.carouselTools}>
