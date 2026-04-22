@@ -16,7 +16,6 @@ export default function DashboardSidebar({
   activePanel,
   navigationItems,
   onPanelChange,
-  session,
 }: DashboardSidebarProps) {
 
   return (
