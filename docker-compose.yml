@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql
     ports:
       - "${DB_PORT}:5432"
     healthcheck:
@@ -59,7 +59,7 @@ services:
       chain:
         condition: service_healthy
     volumes:
-      # - ./crypto:/usr/src/app
+      - ./crypto:/usr/src/app
       - /usr/src/app/node_modules
     networks:
       - NeoImmo-docker
@@ -91,8 +91,8 @@ services:
       chain-deployer:
         condition: service_completed_successfully
     volumes:
-      # - ./backend:/usr/src/app
-      # - ./crypto:/usr/src/crypto:ro
+      - ./backend:/usr/src/app
+      - ./crypto:/usr/src/crypto:ro
       - /usr/src/app/node_modules
     networks:
       - NeoImmo-docker
