@@ -89,7 +89,7 @@ services:
       database:
         condition: service_healthy
       chain-deployer:
-        condition: service_completed_successfully
+        condition: service_started
     volumes:
       - ./backend:/usr/src/app
       - ./crypto:/usr/src/crypto:ro
@@ -115,43 +115,43 @@ services:
       database:
         condition: service_healthy
 
-  otterscan:
-    container_name: otterscan
-    image: otterscan/otterscan:latest
-    restart: always
-    depends_on:
-      chain:
-        condition: service_healthy
-    environment:
-      OTS2: "false"
-      OTTERSCAN_CONFIG: >-
-        {
-          "erigonURL": "http://localhost:${HARDHAT_PORT:-8545}",
-          "experimentalFixedChainId": 31337,
-          "branding": {
-            "siteName": "NeoImmo Explorer",
-            "networkTitle": "Local Devnet",
-            "hideAnnouncements": true
-          },
-          "chainInfo": {
-            "name": "NeoImmo Local Devnet",
-            "faucets": [],
-            "nativeCurrency": {
-              "name": "Ether",
-              "symbol": "ETH",
-              "decimals": 18
-            }
-          },
-          "externalDataSources": {
-            "ccip": {
-              "ensLookups": false
-            }
-          }
-        }
-    ports:
-      - "${OTTERSCAN_PORT:-5100}:80"
-    networks:
-      - NeoImmo-docker
+  # otterscan:
+  #   container_name: otterscan
+  #   image: otterscan/otterscan:latest
+  #   restart: always
+  #   depends_on:
+  #     chain:
+  #       condition: service_healthy
+  #   environment:
+  #     OTS2: "false"
+  #     OTTERSCAN_CONFIG: >-
+  #       {
+  #         "erigonURL": "http://localhost:${HARDHAT_PORT:-8545}",
+  #         "experimentalFixedChainId": 31337,
+  #         "branding": {
+  #           "siteName": "NeoImmo Explorer",
+  #           "networkTitle": "Local Devnet",
+  #           "hideAnnouncements": true
+  #         },
+  #         "chainInfo": {
+  #           "name": "NeoImmo Local Devnet",
+  #           "faucets": [],
+  #           "nativeCurrency": {
+  #             "name": "Ether",
+  #             "symbol": "ETH",
+  #             "decimals": 18
+  #           }
+  #         },
+  #         "externalDataSources": {
+  #           "ccip": {
+  #             "ensLookups": false
+  #           }
+  #         }
+  #       }
+  #   ports:
+  #     - "${OTTERSCAN_PORT:-5100}:80"
+  #   networks:
+  #     - NeoImmo-docker
 
   # redis:
   #   container_name: redis
