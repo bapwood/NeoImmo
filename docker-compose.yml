@@ -59,7 +59,6 @@ services:
       chain:
         condition: service_healthy
     volumes:
-      - ./crypto:/usr/src/app
       - /usr/src/app/node_modules
     networks:
       - NeoImmo-docker
@@ -91,8 +90,6 @@ services:
       chain-deployer:
         condition: service_started
     volumes:
-      - ./backend:/usr/src/app
-      - ./crypto:/usr/src/crypto:ro
       - /usr/src/app/node_modules
     networks:
       - NeoImmo-docker
@@ -103,7 +100,6 @@ services:
     image: node:20-alpine
     working_dir: /usr/src/app
     volumes:
-      - .:/usr/src/app
     command: npx prisma studio --port 5555 --browser none --url "${DATABASE_URL}"
     ports:
       - "5555:5555"
