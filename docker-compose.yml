@@ -99,7 +99,6 @@ services:
     container_name: prisma-studio
     image: node:20-alpine
     working_dir: /usr/src/app
-    volumes:
     command: npx prisma studio --port 5555 --browser none --url "${DATABASE_URL}"
     ports:
       - "5555:5555"
