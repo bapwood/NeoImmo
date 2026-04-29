@@ -12,7 +12,7 @@
     "migrate": "npx prisma migrate dev --name 0_init && npx prisma generate",
     "migrate:deploy": "npx prisma migrate deploy && npx prisma generate",
     "start:dev": "nest start --watch",
-    "start:migrated": "npm run migrate:deploy && npm run start:dev",
+    "start:migrated": "npm run migrate:deploy && npm run start:prod",
     "seed:demo": "ts-node -r tsconfig-paths/register src/scripts/bootstrap-demo.ts",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
