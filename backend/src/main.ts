@@ -9,6 +9,7 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const allowedOrigins = [
     'http://localhost:3000',
+    'https://neoimmo.space',
     process.env.FRONTEND_URL,
   ].filter(Boolean) as string[];
 
