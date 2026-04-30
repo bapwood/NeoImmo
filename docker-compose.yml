@@ -75,7 +75,7 @@ services:
       DATABASE_URL: ${DATABASE_URL}
     networks:
       - NeoImmo-docker
-    command: sh -c "npx prisma migrate deploy && npm run start:dev"
+    command: sh -c "npx prisma migrate deploy && npm run start:prod"
 
   prisma-studio:
     container_name: prisma-studio
@@ -92,43 +92,43 @@ services:
       database:
         condition: service_healthy
 
-  otterscan:
-    container_name: otterscan
-    image: otterscan/otterscan:latest
-    restart: always
-    depends_on:
-      chain:
-        condition: service_healthy
-    environment:
-      OTS2: "false"
-      OTTERSCAN_CONFIG: >-
-        {
-          "erigonURL": "http://localhost:${HARDHAT_PORT:-8545}",
-          "experimentalFixedChainId": 31337,
-          "branding": {
-            "siteName": "NeoImmo Explorer",
-            "networkTitle": "Local Devnet",
-            "hideAnnouncements": true
-          },
-          "chainInfo": {
-            "name": "NeoImmo Local Devnet",
-            "faucets": [],
-            "nativeCurrency": {
-              "name": "Ether",
-              "symbol": "ETH",
-              "decimals": 18
-            }
-          },
-          "externalDataSources": {
-            "ccip": {
-              "ensLookups": false
-            }
-          }
-        }
-    ports:
-      - "${OTTERSCAN_PORT:-5100}:80"
-    networks:
-      - NeoImmo-docker
+  # otterscan:
+  #   container_name: otterscan
+  #   image: otterscan/otterscan:latest
+  #   restart: always
+  #   depends_on:
+  #     chain:
+  #       condition: service_healthy
+  #   environment:
+  #     OTS2: "false"
+  #     OTTERSCAN_CONFIG: >-
+  #       {
+  #         "erigonURL": "http://localhost:${HARDHAT_PORT:-8545}",
+  #         "experimentalFixedChainId": 31337,
+  #         "branding": {
+  #           "siteName": "NeoImmo Explorer",
+  #           "networkTitle": "Local Devnet",
+  #           "hideAnnouncements": true
+  #         },
+  #         "chainInfo": {
+  #           "name": "NeoImmo Local Devnet",
+  #           "faucets": [],
+  #           "nativeCurrency": {
+  #             "name": "Ether",
+  #             "symbol": "ETH",
+  #             "decimals": 18
+  #           }
+  #         },
+  #         "externalDataSources": {
+  #           "ccip": {
+  #             "ensLookups": false
+  #           }
+  #         }
+  #       }
+  #   ports:
+  #     - "${OTTERSCAN_PORT:-5100}:80"
+  #   networks:
+  #     - NeoImmo-docker
 
 volumes:
   pgdata:
