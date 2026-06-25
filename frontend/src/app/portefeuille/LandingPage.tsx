@@ -63,7 +63,7 @@ const roadmap = [
   {
     phase: "01",
     title: "Whitelist & validation terrain",
-    copy: "Constituer une première communauté, recueillir des retours concrets et affiner le parcours utilisateur avant montée en charge.",
+    copy: "Communauté early-access, retours terrain, affinage du parcours.",
   },
   {
     phase: "02",
@@ -73,12 +73,12 @@ const roadmap = [
   {
     phase: "03",
     title: "Automatisation des flux",
-    copy: "Activer les smart contracts pour la traçabilité des parts, la distribution des loyers et la simplification opérationnelle.",
+    copy: "Smart contracts actifs pour les parts, les loyers et les flux opérationnels.",
   },
   {
     phase: "04",
     title: "Conformité & déploiement",
-    copy: "Étendre le catalogue, consolider le KYC et faire grandir la plateforme sans perdre en transparence ni en simplicité.",
+    copy: "Catalogue élargi, KYC consolidé, croissance sans compromis sur la simplicité.",
   },
 ];
 
@@ -96,25 +96,7 @@ const visionCards = [
   {
     icon: "03",
     title: "Ce que la technologie change",
-    copy: "La blockchain et les smart contracts automatisent la distribution des loyers, la traçabilité des parts et une partie des échanges, tout en laissant une interface compréhensible pour des profils non crypto.",
-  },
-];
-
-const audienceCards = [
-  {
-    icon: "A",
-    title: "Particuliers qui veulent construire un patrimoine",
-    copy: "Des investisseurs retail qui veulent accéder à l’immobilier sans attendre d’avoir un apport massif dès le départ.",
-  },
-  {
-    icon: "B",
-    title: "Jeunes actifs, étudiants et primo-investisseurs",
-    copy: "Des profils avec une épargne limitée, à la recherche d’une première exposition à un actif réel plus stable qu’un produit purement spéculatif.",
-  },
-  {
-    icon: "C",
-    title: "Profils orientés revenus passifs",
-    copy: "Des utilisateurs qui cherchent une source de revenus récurrents, avec moins de friction de gestion qu’une détention immobilière traditionnelle.",
+    copy: "Smart contracts pour les loyers et la traçabilité. Interface simple — aucune connaissance crypto requise.",
   },
 ];
 
@@ -203,6 +185,9 @@ export default function LandingPage({ onAuthenticated }: LandingPageProps) {
   const [leadNotice, setLeadNotice] = useState<Notice>(null);
   const [signupNotice, setSignupNotice] = useState<Notice>(null);
   const [signupSubmitting, setSignupSubmitting] = useState(false);
+  const [isActivated, setIsActivated] = useState(false);
+  const [isFaded, setIsFaded] = useState(false);
+  const [isRemoved, setIsRemoved] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -305,10 +290,44 @@ export default function LandingPage({ onAuthenticated }: LandingPageProps) {
       ? styles.noticeSuccess
       : styles.noticeError;
 
+  useEffect(() => {
+    const activateTimeout = setTimeout(() => {
+      setIsActivated(true);
+    }, 400);
+
+    const fadeTimeout = setTimeout(() => {
+      setIsFaded(true);
+    }, 2000);
+
+    const removeTimeout = setTimeout(() => {
+      setIsRemoved(true);
+    }, 2300);
+
+    return () => {
+      clearTimeout(activateTimeout);
+      clearTimeout(fadeTimeout);
+      clearTimeout(removeTimeout);
+    };
+  }, []);
+
+  const logoClassName = `${styles.logo} ${isActivated ? styles.activate : ""} ${isFaded ? styles.fade : ""}`;
+  const introStyle = isRemoved ? { top: "-100vh" } : {};
+
   return (
     <main
       className={`${styles.page} ${displayFont.variable} ${bodyFont.variable}`}
     >
+      <div className={styles.intro} style={introStyle}>
+        <div className={styles.logoHeader}>
+          <span className={logoClassName}>Neo</span>
+          <span
+            className={logoClassName}
+            style={{ transitionDelay: "0.4s", color: "#0052cc" }}
+          >
+            immo
+          </span>
+        </div>
+      </div>
       <div className={styles.shell}>
         <motion.header
           className={styles.header}
@@ -327,7 +346,6 @@ export default function LandingPage({ onAuthenticated }: LandingPageProps) {
           <nav className={styles.nav}>
             <a href="#vision">Solution</a>
             <a href="#market">Actifs</a>
-            {/* <a href="#audience">Cibles</a> */}
             <a href="#model">Économie</a>
             <a href="#roadmap">Roadmap</a>
             <a href="#contact">Contact</a>
@@ -376,9 +394,6 @@ export default function LandingPage({ onAuthenticated }: LandingPageProps) {
               <a href="#market" className={styles.primaryAction}>
                 Explorer les actifs
               </a>
-              <a href="#contact" className={styles.secondaryAction}>
-                Parler au projet
-              </a>
               <a href="#signup" className={styles.ghostAction}>
                 Créer mon compte
               </a>
@@ -388,10 +403,6 @@ export default function LandingPage({ onAuthenticated }: LandingPageProps) {
               <article className={styles.metric}>
                 <span>Actifs publics</span>
                 <strong>{loading ? "..." : properties.length}</strong>
-                <p>
-                  Une première vitrine pour découvrir les biens déjà publiés sur
-                  la plateforme.
-                </p>
               </article>
               <article className={styles.metric}>
                 <span>Tokens exposés</span>
@@ -408,10 +419,6 @@ export default function LandingPage({ onAuthenticated }: LandingPageProps) {
               <article className={styles.metric}>
                 <span>Break-even ciblé</span>
                 <strong>Mois 9</strong>
-                <p>
-                  Un objectif de montée en charge posé dans le business plan,
-                  après onboarding des premiers actifs.
-                </p>
               </article>
             </div>
           </div>
@@ -426,10 +433,8 @@ export default function LandingPage({ onAuthenticated }: LandingPageProps) {
                 réel
               </h2>
               <p>
-                L’idée n’est pas de rendre l’immobilier “plus hype”. L’idée est
-                de débloquer un marché historiquement fermé, en combinant
-                fractionnement de l’investissement, transparence et
-                automatisation.
+                Débloquer un marché historiquement fermé grâce au
+                fractionnement, à la transparence et à l’automatisation.
               </p>
             </div>
           </div>
@@ -455,9 +460,9 @@ export default function LandingPage({ onAuthenticated }: LandingPageProps) {
           <div className={styles.sectionHeader}>
             <div>
               <div className={styles.eyebrow}>Actifs en vitrine</div>
-              <h2>Nos offre disponibles</h2>
+              <h2>Nos offres disponibles</h2>
               <p>
-                Nous proposons un large eventails de biens disponible pour
+                Nous proposons un large éventail de biens disponibles pour
                 l&apos;achat fractionné
               </p>
             </div>
@@ -545,39 +550,6 @@ export default function LandingPage({ onAuthenticated }: LandingPageProps) {
           )}
         </section>
 
-        <section id="audience" className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <div>
-              <div className={styles.eyebrow}>Cibles prioritaires</div>
-              <h2>Pour qui NeoImmo est construit dès le départ</h2>
-              <p>
-                Le projet vise d’abord des utilisateurs qui veulent une
-                exposition immobilière lisible, plus flexible et moins lourde
-                qu’un achat direct.
-              </p>
-            </div>
-          </div>
-
-          <div className={styles.infoGrid}>
-            {audienceCards.map((card, index) => (
-              <motion.article
-                key={card.title}
-                className={styles.infoCard}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 1, delay: index * 0.1 }}
-              >
-                <article key={card.title} className={styles.infoCard}>
-                  <div className={styles.iconBadge}>{card.icon}</div>
-                  <h3>{card.title}</h3>
-                  <p>{card.copy}</p>
-                </article>
-              </motion.article>
-            ))}
-          </div>
-        </section>
-
         <section id="model" className={styles.section}>
           <div className={styles.sectionHeader}>
             <div>
@@ -587,9 +559,8 @@ export default function LandingPage({ onAuthenticated }: LandingPageProps) {
                 côté plateforme
               </h2>
               <p>
-                NeoImmo ne se limite pas à tokeniser des biens. Le projet
-                articule accessibilité, gouvernance, frais compréhensibles et
-                montée en charge progressive.
+                Accessibilité, gouvernance claire et montée en charge
+                progressive.
               </p>
             </div>
           </div>
@@ -604,11 +575,9 @@ export default function LandingPage({ onAuthenticated }: LandingPageProps) {
                 viewport={{ once: true }}
                 transition={{ duration: 1, delay: index * 0.1 }}
               >
-                <article key={card.title} className={styles.infoCard}>
-                  <div className={styles.iconBadge}>{card.icon}</div>
-                  <h3>{card.title}</h3>
-                  <p>{card.copy}</p>
-                </article>
+                <div className={styles.iconBadge}>{card.icon}</div>
+                <h3>{card.title}</h3>
+                <p>{card.copy}</p>
               </motion.article>
             ))}
           </div>
@@ -619,29 +588,23 @@ export default function LandingPage({ onAuthenticated }: LandingPageProps) {
             <div>
               <div className={styles.eyebrow}>Roadmap</div>
               <h2>Les étapes pour passer du concept au déploiement crédible</h2>
-              <p>
-                La logique est simple: valider, onboarder les premiers actifs,
-                automatiser les flux, puis élargir le catalogue dans un cadre de
-                conformité solide.
-              </p>
+              <p>Valider, onboarder, automatiser, déployer.</p>
             </div>
           </div>
 
           <div className={styles.roadmapGrid}>
             {roadmap.map((step, index) => (
               <motion.article
-                key={step.title}
-                className={styles.infoCard}
+                key={step.phase}
+                className={styles.roadmapCard}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 1, delay: index * 0.1 }}
               >
-                <article key={step.phase} className={styles.roadmapCard}>
-                  <div className={styles.phase}>{step.phase}</div>
-                  <h3>{step.title}</h3>
-                  <p>{step.copy}</p>
-                </article>
+                <div className={styles.phase}>{step.phase}</div>
+                <h3>{step.title}</h3>
+                <p>{step.copy}</p>
               </motion.article>
             ))}
           </div>
@@ -655,9 +618,8 @@ export default function LandingPage({ onAuthenticated }: LandingPageProps) {
                 Premiers utilisateurs, partenaires actifs et retours concrets
               </h2>
               <p>
-                Aujourd’hui, l’enjeu est de confronter NeoImmo au terrain:
-                comprendre les attentes des premiers utilisateurs, structurer
-                des partenariats et préparer l’exécution à plus grande échelle.
+                Premiers utilisateurs, partenaires et retours concrets
+                bienvenus.
               </p>
             </div>
           </div>
@@ -668,20 +630,15 @@ export default function LandingPage({ onAuthenticated }: LandingPageProps) {
                 <div>
                   <div className={styles.eyebrow}>Parler au projet</div>
                   <h3>Vous voulez participer à la phase pilote ?</h3>
-                  <p>
-                    Que vous soyez investisseur, opérateur immobilier,
-                    partenaire ou simplement intéressé par le concept,
-                    laissez-nous votre contexte pour que l’on vous recontacte
-                    dans le bon cadre.
-                  </p>
+                  <p>Laissez-nous votre contexte, on vous recontacte.</p>
                 </div>
 
                 <div className={styles.contactMini}>
                   <span>Validation</span>
                   <strong>Premiers utilisateurs & feedback produit</strong>
                   <p>
-                    Nous cherchons des retours concrets pour ajuster
-                    l’expérience avant montée en charge.
+                    Retours concrets pour ajuster l’expérience avant montée en
+                    charge.
                   </p>
                 </div>
                 <div className={styles.contactMini}>
@@ -693,14 +650,6 @@ export default function LandingPage({ onAuthenticated }: LandingPageProps) {
                   <p>
                     Le projet a besoin d’actifs, de distribution et de relais de
                     confiance.
-                  </p>
-                </div>
-                <div className={styles.contactMini}>
-                  <span>Canaux</span>
-                  <strong>Whitelist, newsletter, Instagram, LinkedIn</strong>
-                  <p>
-                    Le lancement passe d’abord par une communauté engagée et
-                    bien informée.
                   </p>
                 </div>
 
@@ -760,14 +709,6 @@ export default function LandingPage({ onAuthenticated }: LandingPageProps) {
                         placeholder="Société, média ou structure"
                       />
                     </label>
-                    <div className={styles.field}>
-                      <span>Sujet principal</span>
-                      <div className={styles.featureList}>
-                        <span>Accès early</span>
-                        <span>Partenariat actif</span>
-                        <span>Validation concept</span>
-                      </div>
-                    </div>
                   </div>
 
                   <label className={styles.field}>
@@ -780,7 +721,7 @@ export default function LandingPage({ onAuthenticated }: LandingPageProps) {
                           message: event.target.value,
                         }))
                       }
-                      placeholder="Je veux comprendre le modèle, suivre la whitelist, discuter d’un partenariat ou découvrir comment seront gérés les premiers actifs."
+                      placeholder="Je veux comprendre le modèle, discuter d’un partenariat..."
                       required
                     />
                   </label>
@@ -788,10 +729,6 @@ export default function LandingPage({ onAuthenticated }: LandingPageProps) {
                   <button type="submit" className={styles.secondaryAction}>
                     Envoyer la demande
                   </button>
-                  <p className={styles.formNote}>
-                    Chaque message nous aide à prioriser le produit, les
-                    partenariats et la préparation du lancement.
-                  </p>
                 </form>
               </div>
             </article>
@@ -804,9 +741,8 @@ export default function LandingPage({ onAuthenticated }: LandingPageProps) {
                     Créer un compte et rejoindre la première cohorte NeoImmo
                   </h3>
                   <p>
-                    L’inscription vous donne un accès immédiat à l’espace
-                    NeoImmo et prépare les futurs parcours de qualification
-                    investisseur, de KYC et de suivi de portefeuille.
+                    Accès immédiat à l’espace NeoImmo et aux futurs parcours
+                    investisseur.
                   </p>
                 </div>
 
@@ -894,29 +830,6 @@ export default function LandingPage({ onAuthenticated }: LandingPageProps) {
                   </button>
                 </form>
               </article>
-
-              <article className={styles.faqPanel}>
-                <div>
-                  <div className={styles.eyebrow}>
-                    Connexion & compréhension
-                  </div>
-                  <h3>Déjà onboardé ou simplement en veille ?</h3>
-                  <p>
-                    Connectez-vous si vous avez déjà un compte. Sinon,
-                    poursuivez avec la FAQ pour comprendre le produit, son stade
-                    d’avancement et sa logique économique.
-                  </p>
-                </div>
-
-                <div className={styles.heroActions}>
-                  <Link href="/signin" className={styles.ghostAction}>
-                    Aller à la connexion
-                  </Link>
-                  <a href="#faq" className={styles.secondaryAction}>
-                    Voir la FAQ
-                  </a>
-                </div>
-              </article>
             </div>
           </div>
         </section>
@@ -925,11 +838,8 @@ export default function LandingPage({ onAuthenticated }: LandingPageProps) {
           <div className={styles.sectionHeader}>
             <div>
               <div className={styles.eyebrow}>FAQ</div>
-              <h2>Les questions qui reviennent avant de rejoindre le projet</h2>
-              <p>
-                Ces réponses posent le cadre: accessibilité, rôle de la
-                blockchain, gestion des revenus et gouvernance des actifs.
-              </p>
+              <h2>Les questions fréquemment posées</h2>
+              <p>Accessibilité, blockchain, revenus et gouvernance.</p>
             </div>
           </div>
 
@@ -946,15 +856,10 @@ export default function LandingPage({ onAuthenticated }: LandingPageProps) {
         </section>
 
         <footer className={styles.footer}>
-          <span>
-            NeoImmo ouvre l’investissement immobilier à une nouvelle génération
-            d’utilisateurs, avec plus de fluidité, plus de transparence et moins
-            de barrières à l’entrée.
-          </span>
+          <span>L’immobilier fractionné, accessible à tous.</span>
           <div className={styles.footerLinks}>
             <a href="#vision">Solution</a>
             <a href="#market">Catalogue</a>
-            <a href="#audience">Cibles</a>
             <a href="#roadmap">Roadmap</a>
             <a href="#contact">Contact</a>
             <Link href="/signin">Connexion</Link>

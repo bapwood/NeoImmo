@@ -1,8 +1,6 @@
 import { clearStoredSession } from './auth';
 import type { AuthSession } from './types';
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-
 type ApiErrorCode = 'AUTH_EXPIRED' | 'FORBIDDEN' | 'REQUEST_FAILED';
 
 export class ApiError extends Error {
@@ -55,7 +53,7 @@ export function resolveAssetUrl(assetPath: string | null | undefined) {
   }
 
   if (assetPath.startsWith('/')) {
-    return `${API_URL}${assetPath}`;
+    return `/api/${assetPath}`;
   }
 
   return assetPath;
@@ -78,7 +76,7 @@ export async function requestJson<T>(
     headers.set('Authorization', `Bearer ${session.accessToken}`);
   }
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
+  const response = await fetch(`/api/${endpoint}`, {
     ...init,
     headers,
     cache: 'no-store',

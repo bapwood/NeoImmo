@@ -13,7 +13,7 @@ import {
   type ResourceConfig,
   type ResourceKey,
 } from '@/src/lib/dashboard-resources';
-import { API_URL, ApiError, requestJson } from '@/src/lib/api';
+import { ApiError, requestJson } from '@/src/lib/api';
 import {
   clearStoredSession,
   readStoredSession,
@@ -685,7 +685,7 @@ export default function DashboardPanel({
     <main className={styles.shell}>
       <DashboardSidebar
         activePanel={activePanel}
-        apiUrl={API_URL}
+        apiUrl={"/api"}
         navigationItems={navigationItems}
         onPanelChange={handlePanelChange}
         session={session}
