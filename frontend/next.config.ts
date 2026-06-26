@@ -2,12 +2,14 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: "http://18.224.104.1:3001/:path*",
-      },
-    ];
+    return {
+      beforeFiles: [
+        {
+          source: "/api/:path*",
+          destination: "http://TON_IP_AWS:TON_PORT/api/:path*",
+        },
+      ],
+    };
   },
   async redirects() {
     return [
