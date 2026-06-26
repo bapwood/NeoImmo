@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
       beforeFiles: [
         {
           source: "/api/:path*",
-          destination: "http://18.224.104.1:3001/api/:path*",
+          destination: "http://18.224.104.1:3001/:path*",
         },
       ],
     };
