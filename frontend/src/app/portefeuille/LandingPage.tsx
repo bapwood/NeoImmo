@@ -468,7 +468,7 @@ export default function LandingPage({ onAuthenticated }: LandingPageProps) {
           <div className={styles.sectionHeader}>
             <div>
               <div className={styles.eyebrow}>Les chiffres clés</div>
-              <h2>La Cryptomonnaie en France c'est</h2>
+              <h2>La Cryptomonnaie en France c&apos;est</h2>
             </div>
           </div>
           <div className={styles.infoGrid}>
