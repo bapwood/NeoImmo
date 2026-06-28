@@ -497,6 +497,33 @@
   transition: transform 220ms ease, box-shadow 220ms ease;
 }
 
+.infoCardNumbers {
+  border: 1px solid rgba(var(--theme-primary-rgb), 0.1);
+  border-radius: 28px;
+  padding: 2rem 1.75rem;
+  background: rgba(var(--theme-surface-rgb), 0.96);
+  box-shadow: var(--shadow-soft);
+  transition: transform 220ms ease, box-shadow 220ms ease;
+}
+
+.iconBadgeNumber {
+  font-family: var(--landing-font-display), var(--font-sans);
+  font-size: 3rem;
+  font-weight: 800;
+  color: rgba(var(--theme-primary-rgb), 1);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  margin-bottom: 1.2rem;
+  justify-self: center;
+}
+
+.infoCardNumber p {
+  margin: 0.85rem 0 0;
+  color: var(--muted);
+  font-size: 0.93rem;
+  line-height: 1.8;
+}
+
 .infoCard:hover {
   transform: translateY(-3px);
   box-shadow: 0 12px 32px rgba(var(--theme-primary-rgb), 0.1);

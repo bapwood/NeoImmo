@@ -10,7 +10,7 @@ import { writeStoredSession } from "@/src/lib/auth";
 import { fetchAvailableOpportunities } from "@/src/lib/opportunities";
 import type { AuthSession, PropertyRecord } from "@/src/lib/types";
 import styles from "./styles/LandingPage.module.css";
-import { motion } from "framer-motion";
+import { motion, animate, useInView } from "framer-motion";
 
 type LandingPageProps = {
   onAuthenticated?: () => void;
@@ -84,19 +84,22 @@ const roadmap = [
 
 const visionCards = [
   {
-    icon: "01",
-    title: "Le blocage historique",
-    copy: "On présente souvent la pierre comme l’un des meilleurs moyens de construire du patrimoine. Dans les faits, le capital initial, la complexité de gestion et la tension du marché excluent la majorité des profils.",
+    value: 6000000,
+    formatDots: true,
+    suffix: "",
+    copy: "Environ 6 millions de français qui ont adopté la cryptomonnaie et qui détiennent des crypto-actifs",
   },
   {
-    icon: "02",
-    title: "La réponse NeoImmo",
-    copy: "NeoImmo permet d’acheter une fraction de bien immobilier plutôt qu’un actif entier. L’entrée se fait avec un ticket réduit, sans devoir immobiliser le capital d’un achat complet.",
+    value: 93,
+    formatDots: false,
+    suffix: " %",
+    copy: "C'est la quasi-totalité des Français déclare connaître les crypto-actifs. Le sujet n'est plus une niche technologique.",
   },
   {
-    icon: "03",
-    title: "Ce que la technologie change",
-    copy: "Smart contracts pour les loyers et la traçabilité. Interface simple — aucune connaissance crypto requise.",
+    value: 30,
+    formatDots: false,
+    suffix: " %",
+    copy: "C'est le pourcentage de français qui considère un premier investissement",
   },
 ];
 
@@ -155,6 +158,43 @@ const faqItems = [
       "Oui. La landing expose déjà les biens publiés pour expliquer la proposition de valeur avant l’inscription ou la prise de contact.",
   },
 ];
+
+function AnimatedCounter({
+  value,
+  suffix = "",
+  formatDots = false,
+}: {
+  value: number;
+  suffix?: string;
+  formatDots?: boolean;
+}) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const isInView = useInView(ref, { once: false, margin: "-50px" });
+  const [displayValue, setDisplayValue] = useState("0");
+
+  useEffect(() => {
+    if (isInView) {
+      const controls = animate(0, value, {
+        duration: 2,
+        ease: "easeOut",
+        onUpdate(currentValue) {
+          let formatted = Math.round(currentValue).toString();
+
+          if (formatDots) {
+            formatted = formatted.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+          }
+
+          setDisplayValue(formatted + suffix);
+        },
+      });
+      return () => controls.stop();
+    } else {
+      setDisplayValue("0" + suffix);
+    }
+  }, [isInView, value, formatDots, suffix]);
+
+  return <span ref={ref}>{displayValue}</span>;
+}
 
 function formatCurrency(value: number) {
   return `${new Intl.NumberFormat("fr-FR").format(value)} €`;
@@ -427,29 +467,27 @@ export default function LandingPage({ onAuthenticated }: LandingPageProps) {
         <motion.section id="vision" className={styles.section} {...fadeInUp}>
           <div className={styles.sectionHeader}>
             <div>
-              <div className={styles.eyebrow}>Notre projet</div>
-              <h2>
-                Rendre la pierre accessible sans trahir la logique d’un actif
-                réel
-              </h2>
-              <p>
-                Débloquer un marché historiquement fermé grâce au
-                fractionnement, à la transparence et à l’automatisation.
-              </p>
+              <div className={styles.eyebrow}>Les chiffres clés</div>
+              <h2>La Cryptomonnaie en France c'est</h2>
             </div>
           </div>
           <div className={styles.infoGrid}>
             {visionCards.map((card, index) => (
               <motion.article
-                key={card.title}
-                className={styles.infoCard}
+                key={index}
+                className={styles.infoCardNumbers}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                viewport={{ once: false }}
                 transition={{ duration: 1, delay: index * 0.1 }}
               >
-                <div className={styles.iconBadge}>{card.icon}</div>
-                <h3>{card.title}</h3>
+                <div className={styles.iconBadgeNumber}>
+                  <AnimatedCounter
+                    value={card.value}
+                    suffix={card.suffix}
+                    formatDots={card.formatDots}
+                  />
+                </div>
                 <p>{card.copy}</p>
               </motion.article>
             ))}
