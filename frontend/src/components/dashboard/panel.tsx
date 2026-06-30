@@ -730,7 +730,10 @@ export default function DashboardPanel({
           />
         ) : null}
 
-        {activePanel === 'favorites' ? (
+        {activePanel === 'favorites' &&
+        activeResource?.key === 'user' &&
+        activeResource.singleton &&
+        activeUserProfile ? (
           <DashboardFavoritesPanel
             session={session}
           />

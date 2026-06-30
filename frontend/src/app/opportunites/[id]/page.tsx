@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { readStoredSession } from '@/src/lib/auth';
-import { ApiError, resolveAssetUrl } from '@/src/lib/api';
+import { ApiError, requestJson, resolveAssetUrl } from '@/src/lib/api';
 import { buildExplorerAddressUrl } from '@/src/lib/explorer';
 import {
   fetchOpportunityById,
@@ -49,6 +49,8 @@ export default function OpportunityDetailPage() {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isPreRegistered, setIsPreRegistered] = useState(false);
+  const [loadingPreRegister, setLoadingPreRegister] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -85,6 +87,17 @@ export default function OpportunityDetailPage() {
         }
 
         setProperty(item);
+
+        try {
+          const myPreRegistrations = await requestJson<PropertyRecord[]>('pre-registrations', undefined, session);
+          if (!cancelled) {
+             const alreadyRegistered = myPreRegistrations.some(p => p.id === propertyId);
+             setIsPreRegistered(alreadyRegistered);
+          }
+        } catch (err) {
+          console.error("Impossible de vérifier l'état de pré-inscription", err);
+        }
+
       } catch (caughtError) {
         if (cancelled) {
           return;
@@ -113,6 +126,35 @@ export default function OpportunityDetailPage() {
       cancelled = true;
     };
   }, [params.id, router]);
+
+  async function handleTogglePreRegistration() {
+    const session = readStoredSession();
+      const propertyId = Number(params.id);
+    
+    if (!session) {
+       router.push('/signin');
+       return;
+    }
+
+    setLoadingPreRegister(true);
+
+    try {
+      if (isPreRegistered) {
+        await requestJson(`pre-registrations/${propertyId}`, { method: 'DELETE' }, session);
+        setIsPreRegistered(false);
+        alert('Votre pré-inscription a été annulée.');
+      } else {
+        await requestJson(`pre-registrations/${propertyId}`, { method: 'POST' }, session);
+        setIsPreRegistered(true);
+        alert('Félicitations ! Vous êtes pré-inscrit pour ce bien.');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la pré-inscription:', error);
+      alert('Une erreur est survenue.');
+    } finally {
+      setLoadingPreRegister(false);
+    }
+  }
 
   useEffect(() => {
     setActiveImageIndex(0);
@@ -280,11 +322,36 @@ export default function OpportunityDetailPage() {
         </article>
 
         <article className={styles.summaryCard}>
-          <div className={styles.eyebrow}>Synthèse d’investissement</div>
-          <h2>{property.localization}</h2>
-          <p className={styles.summaryCopy}>
-            {property.description}
-          </p>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between'
+            }}
+          >
+            <div>
+            <div className={styles.eyebrow}>Synthèse d’investissement</div>
+              <h2>{property.localization}</h2>
+              <p className={styles.summaryCopy}>
+                {property.description}
+              </p>
+            </div>
+            <button 
+              onClick={handleTogglePreRegistration}
+              disabled={loadingPreRegister}
+              style={{
+                height: '3rem',
+                padding: '12px 24px',
+                backgroundColor: isPreRegistered ? 'var(--theme-ink)' : 'var(--accent)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.7 : 1
+              }}
+              >
+              {loading ? 'Chargement...' : isPreRegistered ? 'Se désinscrire' : 'Pré-inscription'}
+            </button>
+          </div>
 
           <div className={styles.kpis}>
             <div>

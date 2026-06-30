@@ -89,6 +89,7 @@ model User {
   portfolioPositions PortfolioPosition[]
   portfolioRevenues PortfolioRevenue[]
   favorites Property[] @relation("UserFavorites")
+  preRegistrations   Property[] @relation("UserPreRegistrations")
 }
 
 model RefreshToken {
@@ -129,6 +130,7 @@ model Property {
   portfolioPositions PortfolioPosition[]
   portfolioRevenues PortfolioRevenue[]
   favoritedBy User[] @relation("UserFavorites")
+  preRegisteredBy    User[] @relation("UserPreRegistrations")
 }
 
 model KeyPoint {

@@ -9,7 +9,7 @@ export class FavoritesController {
 
   @Get()
   getFavorites(@Request() req) {
-     const userId = req.user.userId; 
+    const userId = req.user.userId; 
     return this.favoritesService.getFavorites(userId);
   }
 

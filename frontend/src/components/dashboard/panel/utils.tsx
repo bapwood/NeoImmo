@@ -166,6 +166,12 @@ export function buildNavigationItems(role: UserRole): NavigationItem[] {
             description: 'Catalogue disponible',
             icon: PropertyIcon,
           },
+          {
+            key: "favorites" as const,
+            label: "Favoris",
+            description: "Vos biens sauvegardés",
+            icon: HeartIcon,
+          },
         ]
       : [];
 

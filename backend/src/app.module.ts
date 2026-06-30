@@ -10,6 +10,7 @@ import { PropertyModule } from './property/property.module';
 import { RefreshTokenModule } from './refresh-token/refresh-token.module';
 import { UserModule } from './user/user.module';
 import { FavoritesModule } from './favorites/favorites.module';
+import { PreRegistrationModule } from './pre-registration/pre-registration.module';
 
 @Module({
   imports: [
@@ -21,7 +22,8 @@ import { FavoritesModule } from './favorites/favorites.module';
     PortfolioModule,
     PropertyModule,
     RefreshTokenModule,
-    FavoritesModule
+    FavoritesModule,
+    PreRegistrationModule
   ],
   controllers: [AppController],
   providers: [AppService],
