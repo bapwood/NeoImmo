@@ -34,8 +34,9 @@ export default function DashboardFavoritesPanel({
         if (!cancelled) {
           setFavorites(data);
         }
-      } catch (err) {
+      } catch (e) {
         if (!cancelled) {
+          console.log(e);
           setError("Impossible de charger vos favoris.");
         }
       } finally {
@@ -63,7 +64,7 @@ export default function DashboardFavoritesPanel({
   if (favorites.length === 0) {
     return (
       <div className={styles.panel}>
-        <p>Vous n'avez pas encore de biens enregistrés en favoris.</p>
+        <p>Vous n&apos;avez pas encore de biens enregistrés en favoris.</p>
       </div>
     );
   }
