@@ -9,16 +9,19 @@ export class FavoritesController {
 
   @Get()
   getFavorites(@Request() req) {
-    return this.favoritesService.getFavorites(req.user.id);
+     const userId = req.user.userId; 
+    return this.favoritesService.getFavorites(userId);
   }
 
   @Post(':propertyId')
   addFavorite(@Request() req, @Param('propertyId', ParseIntPipe) propertyId: number) {
-    return this.favoritesService.addFavorite(req.user.id, propertyId);
+    const userId = req.user.userId;
+    return this.favoritesService.addFavorite(userId, propertyId);
   }
 
   @Delete(':propertyId')
   removeFavorite(@Request() req, @Param('propertyId', ParseIntPipe) propertyId: number) {
-    return this.favoritesService.removeFavorite(req.user.id, propertyId);
+    const userId = req.user.userId;
+    return this.favoritesService.removeFavorite(userId, propertyId);
   }
 }
