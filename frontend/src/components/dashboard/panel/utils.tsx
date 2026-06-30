@@ -182,12 +182,6 @@ export function buildNavigationItems(role: UserRole): NavigationItem[] {
       description: 'Vue d’ensemble',
       icon: DashboardIcon,
     },
-    {
-      key: 'favorites',
-      label: 'Favoris',
-      description: 'Vos biens sauvegardés',
-      icon: HeartIcon
-    },
     ...clientPanels,
     ...resources.map((resource) => ({
       key: resource.key,

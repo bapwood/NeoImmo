@@ -198,7 +198,7 @@ export default function OpportunityDetailPage() {
   const imageCount = property.images.length;
   const safeActiveImageIndex =
     hasGallery && activeImageIndex >= imageCount ? 0 : activeImageIndex;
-  const heroImage = hasGallery ? property.images[safeActiveImageIndex] : null;
+  const heroImage = hasGallery ? galleryImages[safeActiveImageIndex] : null;
   const openForPurchase = isOpportunityOpenForPurchase(property);
   const availabilityLabel = getOpportunityAvailabilityLabel(property);
 
