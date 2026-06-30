@@ -9,6 +9,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { PropertyModule } from './property/property.module';
 import { RefreshTokenModule } from './refresh-token/refresh-token.module';
 import { UserModule } from './user/user.module';
+import { FavoritesModule } from './favorites/favorites.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { UserModule } from './user/user.module';
     PortfolioModule,
     PropertyModule,
     RefreshTokenModule,
+    FavoritesModule
   ],
   controllers: [AppController],
   providers: [AppService],
