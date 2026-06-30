@@ -88,6 +88,7 @@ model User {
   blockchainOperations BlockchainOperation[]
   portfolioPositions PortfolioPosition[]
   portfolioRevenues PortfolioRevenue[]
+  favorites Property[] @relation("UserFavorites")
 }
 
 model RefreshToken {
@@ -127,6 +128,7 @@ model Property {
   blockchainOperations BlockchainOperation[]
   portfolioPositions PortfolioPosition[]
   portfolioRevenues PortfolioRevenue[]
+  favoritedBy User[] @relation("UserFavorites")
 }
 
 model KeyPoint {

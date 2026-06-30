@@ -1,12 +1,14 @@
 'use client';
 
-import type { KeyboardEvent } from 'react';
+import { useState, type KeyboardEvent, type MouseEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { resolveAssetUrl } from '@/src/lib/api';
+import { requestJson, resolveAssetUrl } from '@/src/lib/api';
 import {
   getOpportunityAvailabilityLabel,
   isOpportunityOpenForPurchase,
 } from '@/src/lib/opportunities';
+import { readStoredSession } from '@/src/lib/auth';
+import { HeartIcon } from './icons';
 import type { PropertyRecord } from '@/src/lib/types';
 import styles from './styles/opportunity-card.module.css';
 
@@ -14,6 +16,7 @@ type OpportunityCardProps = {
   property: PropertyRecord;
   compact?: boolean;
   interactive?: boolean;
+  initialIsFavorite?: boolean; 
 };
 
 function formatCurrency(value: number) {
@@ -24,8 +27,12 @@ export default function OpportunityCard({
   property,
   compact = false,
   interactive = true,
+  initialIsFavorite = false,
 }: OpportunityCardProps) {
   const router = useRouter();
+  const [isFavorite, setIsFavorite] = useState(initialIsFavorite);
+  const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
+  
   const coverImage = resolveAssetUrl(property.images[0]);
   const openForPurchase = isOpportunityOpenForPurchase(property);
   const availabilityLabel = getOpportunityAvailabilityLabel(property);
@@ -38,6 +45,32 @@ export default function OpportunityCard({
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       openDetails();
+    }
+  }
+
+  async function handleToggleFavorite(e: MouseEvent<HTMLButtonElement>) {
+    e.stopPropagation();
+    const session = readStoredSession();
+    
+    if (!session) {
+       router.push('/signin');
+       return;
+    }
+
+    setIsFavoriteLoading(true);
+
+    try {
+      if (isFavorite) {
+        await requestJson(`/favorites/${property.id}`, { method: 'DELETE' }, session);
+        setIsFavorite(false);
+      } else {
+        await requestJson(`/favorites/${property.id}`, { method: 'POST' }, session);
+        setIsFavorite(true);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la modification des favoris:', error);
+    } finally {
+      setIsFavoriteLoading(false);
     }
   }
 
@@ -62,6 +95,20 @@ export default function OpportunityCard({
         <span className={openForPurchase ? styles.pillActive : styles.pillInactive}>
           {availabilityLabel}
         </span>
+        
+        <button 
+          className={styles.favoriteButton} 
+          onClick={handleToggleFavorite}
+          disabled={isFavoriteLoading}
+          aria-label={isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+        >
+           <HeartIcon 
+              style={{ 
+                fill: isFavorite ? 'red' : 'none', 
+                stroke: isFavorite ? 'red' : 'black' 
+              }} 
+           />
+        </button>
       </div>
 
       <div className={styles.content}>

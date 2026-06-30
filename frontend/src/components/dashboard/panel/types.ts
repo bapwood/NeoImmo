@@ -3,7 +3,7 @@ import type { ResourceKey } from '@/src/lib/dashboard-resources';
 import type { TableRow } from '@/src/lib/types';
 
 export type Notice = { tone: 'success' | 'error'; message: string } | null;
-export type PanelKey = 'overview' | 'opportunities' | ResourceKey;
+export type PanelKey = 'overview' | 'opportunities' | 'favorites' | ResourceKey;
 export type ResourceSlice = {
   items: TableRow[];
   loading: boolean;

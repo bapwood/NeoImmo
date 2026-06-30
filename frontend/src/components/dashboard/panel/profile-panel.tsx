@@ -136,6 +136,7 @@ export default function DashboardProfilePanel({
     () => Object.fromEntries(resource.fields.map((field) => [field.key, field])),
     [resource.fields],
   );
+  const [canModify, setCanModify] = useState<boolean>(false);
 
   useEffect(() => {
     setFormState(buildFormState(resource, user));
@@ -274,8 +275,18 @@ export default function DashboardProfilePanel({
       <div className={styles.contentGrid}>
         <article className={styles.formCard}>
           <div>
-            <div className={styles.eyebrow}>Édition</div>
-            <h3>Fiche profil client</h3>
+            <div className={styles.divHeader}>
+              <div>
+                <div className={styles.eyebrow}>Édition</div>
+                <h3>Fiche profil client</h3>
+              </div>
+              <button
+                className={canModify ? styles.modifyButtonClicked : styles.modifyButton }
+                onClick={() => { setCanModify(!canModify) }}
+              >
+                modifier
+              </button>
+            </div>
             <p>
               Cette page remplace la table brute pour vous proposer un espace profil
               directement exploitable, plus lisible et plus proche d’un vrai onboarding.
@@ -345,6 +356,7 @@ export default function DashboardProfilePanel({
                               onChange={handleInputChange}
                               placeholder={field.placeholder}
                               required={field.required}
+                              disabled={canModify}
                             />
                           )}
 

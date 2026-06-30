@@ -36,6 +36,7 @@ import DashboardLoader from './panel/loader';
 import DashboardOpportunitiesPanel from './panel/opportunities-panel';
 import DashboardOverviewPanel from './panel/overview-panel';
 import DashboardPortfolioPanel from './panel/portfolio-panel';
+import DashboardFavoritesPanel from './panel/favorite-panel';
 import DashboardProfilePanel from './panel/profile-panel';
 import DashboardResourcePanel from './panel/resource-panel';
 import DashboardSidebar from './panel/sidebar';
@@ -641,6 +642,7 @@ export default function DashboardPanel({
     !isAdmin &&
     activePanel !== 'overview' &&
     activePanel !== 'opportunities' &&
+    activePanel !== 'favorites' &&
     activeResource?.key === 'property';
 
   useEffect(() => {
@@ -666,9 +668,9 @@ export default function DashboardPanel({
       (resource) => resource.key === panelParam,
     );
 
-    if (panelParam === 'overview' || panelParam === 'opportunities' || matchesResource) {
+    if (panelParam === 'overview' || panelParam === 'opportunities' || panelParam === 'favorites' || matchesResource) {
       setActivePanel(panelParam as PanelKey);
-
+    
       if (matchesResource) {
         setActiveResourceKey(panelParam as ResourceKey);
       }
@@ -728,6 +730,12 @@ export default function DashboardPanel({
           />
         ) : null}
 
+        {activePanel === 'favorites' ? (
+          <DashboardFavoritesPanel
+            session={session}
+          />
+        ) : null}
+
         {activePanel === 'opportunities' ? (
           <DashboardOpportunitiesPanel
             availablePropertiesError={availablePropertiesError}
@@ -738,6 +746,7 @@ export default function DashboardPanel({
 
         {activePanel !== 'overview' &&
         activePanel !== 'opportunities' &&
+        activePanel !== 'favorites' &&
         isClientPortfolioPanel ? (
           <DashboardPortfolioPanel
             error={clientPortfolioError}
@@ -751,6 +760,7 @@ export default function DashboardPanel({
 
         {activePanel !== 'overview' &&
         activePanel !== 'opportunities' &&
+        activePanel !== 'favorites' &&
         activeResource?.key === 'user' &&
         activeResource.singleton &&
         activeUserProfile ? (
@@ -765,6 +775,7 @@ export default function DashboardPanel({
 
         {activePanel !== 'overview' &&
         activePanel !== 'opportunities' &&
+        activePanel !== 'favorites' &&
         activeResource &&
         !isClientPortfolioPanel &&
         !(activeResource.key === 'user' && activeResource.singleton) ? (
@@ -781,6 +792,7 @@ export default function DashboardPanel({
             onToggleUserRestriction={(row) => void handleToggleUserRestriction(row)}
           />
         ) : null}
+
       </section>
     </main>
   );
