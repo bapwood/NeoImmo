@@ -20,6 +20,7 @@ import { Roles } from 'src/auth/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import type { AuthenticatedRequest } from 'src/auth/types/authenticated-request';
+import { AdminRevenueQueryDto } from './dto/admin-revenue-query.dto';
 import { BootstrapDemoPortfolioDto } from './dto/bootstrap-demo-portfolio.dto';
 import { PurchaseHistoryQueryDto } from './dto/purchase-history-query.dto';
 import {
@@ -65,7 +66,9 @@ export class PortfolioController {
   })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   getMyPortfolioPositions(@Req() request: AuthenticatedRequest) {
-    return this.portfolioService.getClientPortfolioPositions(request.user.userId);
+    return this.portfolioService.getClientPortfolioPositions(
+      request.user.userId,
+    );
   }
 
   @Get('me/history')
@@ -108,5 +111,20 @@ export class PortfolioController {
   @ApiForbiddenResponse({ description: 'Forbidden' })
   bootstrapDemoPortfolio(@Body() payload: BootstrapDemoPortfolioDto) {
     return this.portfolioService.bootstrapDemoPortfolio(payload.userId);
+  }
+
+  @Get('admin/revenues')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary: 'List rental revenue records for administration',
+    description:
+      'Returns the projected and paid revenue records across every client and property, filterable by month, property and status, for the admin rent management page.',
+  })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiForbiddenResponse({ description: 'Forbidden' })
+  listAdminRevenues(@Query() query: AdminRevenueQueryDto) {
+    return this.portfolioService.listAdminRevenues(query);
   }
 }

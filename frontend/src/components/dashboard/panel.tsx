@@ -37,9 +37,12 @@ import DashboardOpportunitiesPanel from './panel/opportunities-panel';
 import DashboardOverviewPanel from './panel/overview-panel';
 import DashboardPortfolioPanel from './panel/portfolio-panel';
 import DashboardProfilePanel from './panel/profile-panel';
+import DashboardRentsPanel from './panel/rents-panel';
 import DashboardResourcePanel from './panel/resource-panel';
 import DashboardSidebar from './panel/sidebar';
 import DashboardTopbar from './panel/topbar';
+import DashboardTransactionsPanel from './panel/transactions-panel';
+import DashboardWalletPanel from './panel/wallet-panel';
 import type { Notice, PanelKey, ResourceState } from './panel/types';
 import {
   buildNavigationItems,
@@ -467,6 +470,27 @@ export default function DashboardPanel({
     });
   }
 
+  async function handleWalletLinked(address: string) {
+    if (!session) {
+      return;
+    }
+
+    try {
+      const updatedUser = await requestJson<PanelUser>(
+        '/user/me',
+        {
+          method: 'PUT',
+          body: JSON.stringify({ walletAddress: address }),
+        },
+        session,
+      );
+
+      syncCurrentUser(updatedUser);
+    } catch {
+      // wallet linked in UI anyway, silent fail on save
+    }
+  }
+
   function handleEdit(row: TableRow) {
     if (!activeResource?.allowEdit) {
       return;
@@ -490,6 +514,26 @@ export default function DashboardPanel({
     }
 
     router.push(`/actifs/${encodeURIComponent(String(rowId))}/tokenisation`);
+  }
+
+  function handleOpenPropertyRent(row: TableRow) {
+    const rowId = row[activeResource?.idKey ?? 'id'];
+
+    if (activeResource?.key !== 'property' || rowId == null) {
+      return;
+    }
+
+    router.push(`/actifs/${encodeURIComponent(String(rowId))}/loyers`);
+  }
+
+  function handleOpenUserManagement(row: TableRow) {
+    const rowId = row[activeResource?.idKey ?? 'id'];
+
+    if (activeResource?.key !== 'user' || rowId == null) {
+      return;
+    }
+
+    router.push(`/utilisateurs/${encodeURIComponent(String(rowId))}`);
   }
 
   async function handleDelete(row: TableRow) {
@@ -666,7 +710,14 @@ export default function DashboardPanel({
       (resource) => resource.key === panelParam,
     );
 
-    if (panelParam === 'overview' || panelParam === 'opportunities' || matchesResource) {
+    if (
+      panelParam === 'overview' ||
+      panelParam === 'opportunities' ||
+      panelParam === 'wallets' ||
+      panelParam === 'rents' ||
+      panelParam === 'transactions' ||
+      matchesResource
+    ) {
       setActivePanel(panelParam as PanelKey);
 
       if (matchesResource) {
@@ -698,6 +749,7 @@ export default function DashboardPanel({
           isAdmin={isAdmin}
           onLogout={handleLogout}
           onOpenWalletSettings={handleOpenWalletSettings}
+          onWalletLinked={(addr) => void handleWalletLinked(addr)}
           onQueryChange={setQuery}
           query={query}
           session={session}
@@ -726,6 +778,18 @@ export default function DashboardPanel({
             totalTokenValue={totalTokenValue}
             users={users}
           />
+        ) : null}
+
+        {activePanel === 'wallets' && isAdmin && session ? (
+          <DashboardWalletPanel session={session} />
+        ) : null}
+
+        {activePanel === 'rents' && isAdmin && session ? (
+          <DashboardRentsPanel session={session} properties={properties} />
+        ) : null}
+
+        {activePanel === 'transactions' && isAdmin && session ? (
+          <DashboardTransactionsPanel session={session} properties={properties} users={users} />
         ) : null}
 
         {activePanel === 'opportunities' ? (
@@ -777,6 +841,8 @@ export default function DashboardPanel({
             onDeleteRow={(row) => void handleDelete(row)}
             onEditRow={handleEdit}
             onOpenPropertyStatus={handleOpenPropertyStatus}
+            onOpenPropertyRent={handleOpenPropertyRent}
+            onOpenUserManagement={handleOpenUserManagement}
             onReloadResource={() => void reloadResource(activeResource.key)}
             onToggleUserRestriction={(row) => void handleToggleUserRestriction(row)}
           />

@@ -4,8 +4,11 @@ import type { PanelUser, UserRole } from '@/src/lib/types';
 import {
   DashboardIcon,
   PropertyIcon,
+  RentIcon,
   TokenIcon,
+  TransactionsIcon,
   UsersIcon,
+  WalletIcon,
 } from '../icons';
 import type { NavigationItem, PanelIcon, ResourceState } from './types';
 
@@ -168,14 +171,39 @@ export function buildNavigationItems(role: UserRole): NavigationItem[] {
         ]
       : [];
 
+  const adminPanels =
+    role === 'ADMIN'
+      ? [
+          {
+            key: 'wallets' as const,
+            label: 'Trésorerie',
+            description: 'Wallets & loyers',
+            icon: WalletIcon,
+          },
+          {
+            key: 'rents' as const,
+            label: 'Loyers',
+            description: 'Pilotage des versements',
+            icon: RentIcon,
+          },
+          {
+            key: 'transactions' as const,
+            label: 'Transactions',
+            description: 'Historique on-chain complet',
+            icon: TransactionsIcon,
+          },
+        ]
+      : [];
+
   return [
     {
       key: 'overview' as const,
       label: 'Overview',
-      description: 'Vue d’ensemble',
+      description: 'Vue d\'ensemble',
       icon: DashboardIcon,
     },
     ...clientPanels,
+    ...adminPanels,
     ...resources.map((resource) => ({
       key: resource.key,
       label: resource.navLabel,

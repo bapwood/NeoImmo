@@ -1,0 +1,378 @@
+.stack {
+  display: grid;
+  gap: 1.4rem;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0.5rem 0 0;
+  font-size: 1.7rem;
+}
+
+.subtitle {
+  margin: 0.5rem 0 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.sectionLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.75rem;
+}
+
+/* Wallet cards */
+.walletGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.walletCard {
+  border-radius: 24px;
+  padding: 1.4rem;
+  border: 1px solid rgba(var(--theme-primary-rgb), 0.12);
+  background:
+    radial-gradient(circle at top right, rgba(var(--theme-primary-rgb), 0.1), transparent 30%),
+    linear-gradient(180deg, rgba(255,255,255,0.97), rgba(247,250,255,0.94));
+  box-shadow: var(--shadow-soft);
+  display: grid;
+  gap: 0.6rem;
+}
+
+.walletRole {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.walletBalance {
+  font-size: 1.7rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.walletAddress {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.82rem;
+  font-family: monospace;
+  color: var(--muted);
+}
+
+.copyBtn {
+  border: 1px solid rgba(var(--theme-primary-rgb), 0.14);
+  border-radius: 8px;
+  padding: 0.2rem 0.55rem;
+  background: transparent;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--foreground);
+  transition: background 120ms;
+}
+
+.copyBtn:hover {
+  background: rgba(var(--theme-primary-rgb), 0.07);
+}
+
+.warningBadge {
+  border-radius: 10px;
+  padding: 0.4rem 0.7rem;
+  background: rgba(var(--theme-secondary-rgb), 0.35);
+  color: var(--danger);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Rent summary */
+.rentGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.rentCard {
+  border-radius: 22px;
+  padding: 1.2rem;
+  border: 1px solid rgba(var(--theme-primary-rgb), 0.1);
+  background: rgba(var(--theme-surface-rgb), 0.92);
+  box-shadow: var(--shadow-soft);
+  display: grid;
+  gap: 0.45rem;
+}
+
+.rentCard span {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.rentCard strong {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.rentCard p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.positive {
+  color: #16a34a;
+}
+
+.warning {
+  color: #d97706;
+}
+
+/* Table */
+.tableWrapper {
+  overflow-x: auto;
+  border-radius: 20px;
+  border: 1px solid rgba(var(--theme-primary-rgb), 0.1);
+  box-shadow: var(--shadow-soft);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.87rem;
+}
+
+.table th {
+  padding: 0.85rem 1rem;
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: rgba(var(--theme-surface-rgb), 0.96);
+  border-bottom: 1px solid rgba(var(--theme-primary-rgb), 0.08);
+}
+
+.table td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid rgba(var(--theme-primary-rgb), 0.06);
+  vertical-align: middle;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table tbody tr:hover td {
+  background: rgba(var(--theme-primary-rgb), 0.03);
+}
+
+.propertyName {
+  font-weight: 600;
+}
+
+.contractAddress {
+  margin-top: 0.2rem;
+  font-size: 0.75rem;
+  font-family: monospace;
+  color: var(--muted);
+}
+
+.etherscanLink,
+.explorerLink {
+  color: var(--accent);
+  text-decoration: none;
+  font-family: monospace;
+}
+
+.etherscanLink:hover,
+.explorerLink:hover {
+  text-decoration: underline;
+}
+
+.statusBadge {
+  display: inline-block;
+  border-radius: 8px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.status_deployed {
+  background: rgba(var(--theme-primary-rgb), 0.1);
+  color: var(--accent);
+}
+
+.status_active {
+  background: rgba(22, 163, 74, 0.12);
+  color: #16a34a;
+}
+
+.status_paused {
+  background: rgba(217, 119, 6, 0.12);
+  color: #d97706;
+}
+
+/* Fund row */
+.fundRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.fundInput {
+  width: 80px;
+  border: 1px solid rgba(var(--theme-primary-rgb), 0.18);
+  border-radius: 10px;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.9rem;
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--foreground);
+  outline: none;
+}
+
+.fundInput:focus {
+  border-color: var(--accent);
+}
+
+.fundUnit {
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.fundButton {
+  flex: 1;
+  border: none;
+  border-radius: 12px;
+  padding: 0.5rem 0.9rem;
+  background: linear-gradient(135deg, var(--accent), rgba(var(--theme-primary-rgb), 0.82));
+  color: white;
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: opacity 180ms;
+  white-space: nowrap;
+}
+
+.fundButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.fundSuccess {
+  border-radius: 10px;
+  padding: 0.4rem 0.7rem;
+  background: rgba(22, 163, 74, 0.12);
+  color: #16a34a;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+/* Progress bar */
+.progressBar {
+  position: relative;
+  height: 8px;
+  border-radius: 99px;
+  background: rgba(var(--theme-primary-rgb), 0.08);
+  overflow: hidden;
+  min-width: 80px;
+}
+
+.progressFill {
+  position: absolute;
+  inset: 0;
+  right: auto;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--accent), rgba(var(--theme-primary-rgb), 0.7));
+  transition: width 400ms ease;
+}
+
+.progressLabel {
+  position: absolute;
+  right: 0;
+  top: -1.2rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+/* Buttons */
+.secondaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid rgba(var(--theme-primary-rgb), 0.12);
+  border-radius: 16px;
+  padding: 0.85rem 1.2rem;
+  background: rgba(var(--theme-surface-rgb), 0.92);
+  color: var(--foreground);
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 180ms ease, border-color 180ms ease;
+  white-space: nowrap;
+}
+
+.secondaryButton:hover {
+  transform: translateY(-1px);
+  border-color: rgba(var(--theme-primary-rgb), 0.22);
+}
+
+/* Misc */
+.empty {
+  border-radius: 18px;
+  padding: 1.1rem;
+  border: 1px dashed rgba(var(--theme-primary-rgb), 0.16);
+  background: rgba(var(--theme-primary-rgb), 0.04);
+  color: var(--muted);
+}
+
+.errorBanner {
+  border-radius: 18px;
+  padding: 0.9rem 1rem;
+  background: rgba(var(--theme-secondary-rgb), 0.35);
+  color: var(--danger);
+  font-weight: 600;
+}
+
+@media (max-width: 1180px) {
+  .walletGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .rentGrid {
+    grid-template-columns: 1fr;
+  }
+}

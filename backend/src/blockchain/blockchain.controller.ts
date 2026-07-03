@@ -48,6 +48,7 @@ import {
 import { ExecutePropertyDeployDto } from './dto/execute-property-deploy.dto';
 import { ExecutePrimaryBuyDto } from './dto/execute-primary-buy.dto';
 import { MintPropertyInventoryDto } from './dto/mint-property-inventory.dto';
+import { PayPropertyRentDto } from './dto/pay-property-rent.dto';
 import { PreparePropertyDeployDto } from './dto/prepare-property-deploy.dto';
 import { PreparePrimaryBuyDto } from './dto/prepare-primary-buy.dto';
 import { PrepareClientPrimaryBuyDto } from './dto/prepare-client-primary-buy.dto';
@@ -61,6 +62,22 @@ import type { AuthenticatedRequest } from 'src/auth/types/authenticated-request'
 @Controller('crypto')
 export class BlockchainController {
   constructor(private readonly blockchainService: BlockchainService) {}
+
+  @Get('system/overview')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary: 'Admin system overview',
+    description:
+      'Returns wallet balances (deployer + treasury), per-property token inventory and monthly rent summary.',
+  })
+  @ApiOkResponse({ description: 'System overview' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiForbiddenResponse({ description: 'Forbidden' })
+  getSystemOverview() {
+    return this.blockchainService.getSystemOverview();
+  }
 
   @Get('health')
   @ApiOperation({
@@ -255,7 +272,9 @@ export class BlockchainController {
   })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiForbiddenResponse({ description: 'Forbidden' })
-  @ApiBadRequestResponse({ description: 'Invalid wallet address or country code' })
+  @ApiBadRequestResponse({
+    description: 'Invalid wallet address or country code',
+  })
   syncWalletKyc(@Body() payload: SyncWalletKycDto) {
     return this.blockchainService.syncWalletKyc(payload);
   }
@@ -318,13 +337,15 @@ export class BlockchainController {
     example: 12,
   })
   @ApiOkResponse({
-    description: 'Typed data prepared for a property deployment approval signature',
+    description:
+      'Typed data prepared for a property deployment approval signature',
     type: PreparePropertyDeployResponseDto,
   })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiForbiddenResponse({ description: 'Forbidden' })
   @ApiBadRequestResponse({
-    description: 'Property already deployed, blockchain is unavailable or admin wallet is missing',
+    description:
+      'Property already deployed, blockchain is unavailable or admin wallet is missing',
   })
   @ApiNotFoundResponse({ description: 'Property not found' })
   preparePropertyTokenDeployment(
@@ -366,7 +387,9 @@ export class BlockchainController {
   @ApiConflictResponse({
     description: 'Prepared request already executed or already in progress',
   })
-  @ApiNotFoundResponse({ description: 'Prepared deploy request or property not found' })
+  @ApiNotFoundResponse({
+    description: 'Prepared deploy request or property not found',
+  })
   executePropertyTokenDeployment(
     @Param('id', ParseIntPipe) id: number,
     @Req() request: AuthenticatedRequest,
@@ -401,7 +424,8 @@ export class BlockchainController {
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiForbiddenResponse({ description: 'Forbidden' })
   @ApiBadRequestResponse({
-    description: 'Property must be deployed before minting or amount is invalid',
+    description:
+      'Property must be deployed before minting or amount is invalid',
   })
   @ApiNotFoundResponse({ description: 'Property not found' })
   mintPropertyInventory(
@@ -409,6 +433,84 @@ export class BlockchainController {
     @Body() payload: MintPropertyInventoryDto,
   ) {
     return this.blockchainService.mintPropertyInventory(id, payload);
+  }
+
+  @Get('properties/:id/rent-management')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary: 'Read the rent management overview of a property',
+    description:
+      'Returns the property inventory (tokens sold on-chain) and the monthly rent distribution summary for the admin per-asset rent page.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Property identifier',
+    example: 12,
+  })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiForbiddenResponse({ description: 'Forbidden' })
+  @ApiNotFoundResponse({ description: 'Property not found' })
+  getPropertyRentManagement(@Param('id', ParseIntPipe) id: number) {
+    return this.blockchainService.getPropertyRentManagement(id);
+  }
+
+  @Get('properties/:id/rent-management/:month')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary:
+      'Read the rent distribution detail of a property for a given month',
+    description:
+      'Returns every holder revenue record (amount, status, tx hash) for the given month.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Property identifier',
+    example: 12,
+  })
+  @ApiParam({
+    name: 'month',
+    description: 'Any ISO date within the target month',
+    example: '2026-07-01',
+  })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiForbiddenResponse({ description: 'Forbidden' })
+  @ApiNotFoundResponse({ description: 'Property not found' })
+  getPropertyRentMonthDetail(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('month') month: string,
+  ) {
+    return this.blockchainService.getPropertyRentMonthDetail(id, month);
+  }
+
+  @Post('properties/:id/rent-management/pay')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary:
+      'Distribute the projected rent of a property for a given month on-chain',
+    description:
+      'Sends a native crypto transfer from the treasury wallet to every share holder of the property, proportional to the revenue amount computed for each position, and records the resulting transaction hash.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Property identifier',
+    example: 12,
+  })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiForbiddenResponse({ description: 'Forbidden' })
+  @ApiBadRequestResponse({ description: 'Property not deployed' })
+  @ApiNotFoundResponse({ description: 'Property not found' })
+  payPropertyRent(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() payload: PayPropertyRentDto,
+  ) {
+    return this.blockchainService.payPropertyRent(id, payload.month);
   }
 
   @Post('properties/:id/purchase-availability')
@@ -441,7 +543,10 @@ export class BlockchainController {
     @Param('id', ParseIntPipe) id: number,
     @Body() payload: SetPropertyPurchaseAvailabilityDto,
   ) {
-    return this.blockchainService.setPropertyPurchaseAvailability(id, payload.available);
+    return this.blockchainService.setPropertyPurchaseAvailability(
+      id,
+      payload.available,
+    );
   }
 
   @Post('client/marketplace/prepare-buy')
@@ -467,7 +572,10 @@ export class BlockchainController {
     @Req() request: AuthenticatedRequest,
     @Body() payload: PrepareClientPrimaryBuyDto,
   ) {
-    return this.blockchainService.prepareClientPrimaryBuy(request.user.userId, payload);
+    return this.blockchainService.prepareClientPrimaryBuy(
+      request.user.userId,
+      payload,
+    );
   }
 
   @Post('client/marketplace/execute')
@@ -480,12 +588,14 @@ export class BlockchainController {
       'Verifies that the prepared request belongs to the authenticated client, checks the EIP-712 signature and executes the treasury-to-client transfer.',
   })
   @ApiOkResponse({
-    description: 'Signed primary buy executed on-chain for the authenticated client',
+    description:
+      'Signed primary buy executed on-chain for the authenticated client',
     type: ExecutePrimaryBuyResponseDto,
   })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiBadRequestResponse({
-    description: 'Prepared payload is invalid, expired or signature verification failed',
+    description:
+      'Prepared payload is invalid, expired or signature verification failed',
   })
   @ApiConflictResponse({
     description: 'Prepared request already executed or already in progress',
@@ -495,7 +605,10 @@ export class BlockchainController {
     @Req() request: AuthenticatedRequest,
     @Body() payload: ExecutePrimaryBuyDto,
   ) {
-    return this.blockchainService.executeClientPrimaryBuy(request.user.userId, payload);
+    return this.blockchainService.executeClientPrimaryBuy(
+      request.user.userId,
+      payload,
+    );
   }
 
   @Post('marketplace/prepare-buy')
@@ -540,7 +653,8 @@ export class BlockchainController {
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiForbiddenResponse({ description: 'Forbidden' })
   @ApiBadRequestResponse({
-    description: 'Prepared payload is invalid, expired or signature verification failed',
+    description:
+      'Prepared payload is invalid, expired or signature verification failed',
   })
   @ApiConflictResponse({
     description: 'Prepared request already executed or already in progress',

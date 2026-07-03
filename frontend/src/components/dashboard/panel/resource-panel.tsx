@@ -15,6 +15,8 @@ type DashboardResourcePanelProps = {
   onDeleteRow: (row: TableRow) => void;
   onEditRow: (row: TableRow) => void;
   onOpenPropertyStatus: (row: TableRow) => void;
+  onOpenPropertyRent: (row: TableRow) => void;
+  onOpenUserManagement: (row: TableRow) => void;
   onReloadResource: () => void;
   onToggleUserRestriction: (row: TableRow) => void;
 };
@@ -28,6 +30,8 @@ export default function DashboardResourcePanel({
   onDeleteRow,
   onEditRow,
   onOpenPropertyStatus,
+  onOpenPropertyRent,
+  onOpenUserManagement,
   onReloadResource,
   onToggleUserRestriction,
 }: DashboardResourcePanelProps) {
@@ -165,6 +169,24 @@ export default function DashboardResourcePanel({
                               onClick={() => onOpenPropertyStatus(row)}
                             >
                               Statut
+                            </button>
+                          ) : null}
+                          {activeResource.key === 'property' ? (
+                            <button
+                              type="button"
+                              className={styles.tableButton}
+                              onClick={() => onOpenPropertyRent(row)}
+                            >
+                              Loyers
+                            </button>
+                          ) : null}
+                          {activeResource.key === 'user' ? (
+                            <button
+                              type="button"
+                              className={styles.tableButton}
+                              onClick={() => onOpenUserManagement(row)}
+                            >
+                              Gérer
                             </button>
                           ) : null}
                           {activeResource.key === 'user' && row.role === 'CLIENT' ? (

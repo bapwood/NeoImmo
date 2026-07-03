@@ -35,7 +35,14 @@ if (process.env.RPC_SEPOLIA) {
     type: "http",
     chainType: "l1",
     url: process.env.RPC_SEPOLIA,
-    accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+    accounts: process.env.PRIVATE_KEY
+      ? [process.env.PRIVATE_KEY]
+      : {
+          mnemonic,
+          initialIndex: 0,
+          count: 10,
+        },
+    chainId: 11155111,
   };
 }
 

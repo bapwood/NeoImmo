@@ -91,7 +91,11 @@ export class PortfolioService {
         projectedAnnualIncome: projectedMonthlyIncome * 12,
         projectedAnnualYieldPercent:
           totalInvested > 0
-            ? Number((((projectedMonthlyIncome * 12) / totalInvested) * 100).toFixed(2))
+            ? Number(
+                (((projectedMonthlyIncome * 12) / totalInvested) * 100).toFixed(
+                  2,
+                ),
+              )
             : 0,
         diversificationCount,
       },
@@ -133,19 +137,25 @@ export class PortfolioService {
     });
 
     return entries
-      .filter((entry): entry is PurchaseHistoryOperation => entry.property != null)
+      .filter(
+        (entry): entry is PurchaseHistoryOperation => entry.property != null,
+      )
       .map((entry) => this.serializePurchaseHistoryEntry(entry));
   }
 
   async recordPrimaryPurchase(input: PurchaseRecordInput) {
     if (!Number.isFinite(input.unitPrice) || input.unitPrice <= 0) {
-      throw new BadRequestException('Le prix unitaire de la transaction est invalide.');
+      throw new BadRequestException(
+        'Le prix unitaire de la transaction est invalide.',
+      );
     }
 
     const amountValue = this.parseHumanAmount(input.amount);
 
     if (amountValue <= 0) {
-      throw new BadRequestException('Le montant acheté doit être supérieur à zéro.');
+      throw new BadRequestException(
+        'Le montant acheté doit être supérieur à zéro.',
+      );
     }
 
     const property = await this.prisma.property.findUnique({
@@ -155,11 +165,14 @@ export class PortfolioService {
     });
 
     if (!property) {
-      throw new NotFoundException('Bien introuvable pour la mise à jour du portefeuille.');
+      throw new NotFoundException(
+        'Bien introuvable pour la mise à jour du portefeuille.',
+      );
     }
 
     const investedDelta = Math.round(amountValue * input.unitPrice);
-    const projectedMonthlyIncome = this.computeProjectedMonthlyIncome(investedDelta);
+    const projectedMonthlyIncome =
+      this.computeProjectedMonthlyIncome(investedDelta);
 
     await this.prisma.$transaction(async (tx) => {
       const existingPosition = await tx.portfolioPosition.findUnique({
@@ -171,10 +184,13 @@ export class PortfolioService {
         },
       });
 
-      const nextTokenAmount = amountValue + this.parseHumanAmount(existingPosition?.tokenAmount);
-      const nextInvestedTotal = investedDelta + (existingPosition?.investedTotal ?? 0);
+      const nextTokenAmount =
+        amountValue + this.parseHumanAmount(existingPosition?.tokenAmount);
+      const nextInvestedTotal =
+        investedDelta + (existingPosition?.investedTotal ?? 0);
       const nextMonthlyIncome =
-        projectedMonthlyIncome + (existingPosition?.projectedMonthlyIncome ?? 0);
+        projectedMonthlyIncome +
+        (existingPosition?.projectedMonthlyIncome ?? 0);
       const nextAverageTokenPrice =
         nextTokenAmount > 0
           ? Math.round(nextInvestedTotal / nextTokenAmount)
@@ -286,10 +302,85 @@ export class PortfolioService {
         continue;
       }
 
-      await this.seedPastRevenueRecords(position.id, targetUser.id, property.id, position.projectedMonthlyIncome);
+      await this.seedPastRevenueRecords(
+        position.id,
+        targetUser.id,
+        property.id,
+        position.projectedMonthlyIncome,
+      );
     }
 
     return this.getClientPortfolio(targetUser.id);
+  }
+
+  async listAdminRevenues(filters: {
+    month?: string;
+    propertyId?: number;
+    status?: PortfolioRevenueStatus;
+  }) {
+    const where: Prisma.PortfolioRevenueWhereInput = {};
+
+    if (filters.month) {
+      const monthStart = this.startOfMonth(new Date(filters.month));
+      const monthEnd = this.shiftMonth(monthStart, 1);
+      where.month = { gte: monthStart, lt: monthEnd };
+    }
+
+    if (filters.propertyId) {
+      where.propertyId = filters.propertyId;
+    }
+
+    if (filters.status) {
+      where.status = filters.status;
+    }
+
+    const records = await this.prisma.portfolioRevenue.findMany({
+      where,
+      include: {
+        user: true,
+        property: true,
+      },
+      orderBy: [{ month: 'desc' }, { propertyId: 'asc' }, { userId: 'asc' }],
+    });
+
+    const summary = records.reduce(
+      (acc, record) => {
+        if (record.status === PortfolioRevenueStatus.PAID) {
+          acc.paid += record.amount;
+        } else {
+          acc.projected += record.amount;
+        }
+        return acc;
+      },
+      { paid: 0, projected: 0 },
+    );
+
+    return {
+      summary,
+      records: records.map((record) => ({
+        id: record.id,
+        month: record.month.toISOString(),
+        monthLabel: this.formatMonthLabel(record.month),
+        amount: record.amount,
+        status: record.status,
+        label: record.label,
+        txHash: record.txHash,
+        paidAt: record.paidAt?.toISOString() ?? null,
+        errorMessage: record.errorMessage,
+        updatedAt: record.updatedAt.toISOString(),
+        user: {
+          id: record.user.id,
+          email: record.user.email,
+          firstName: record.user.firstName,
+          lastName: record.user.lastName,
+        },
+        property: {
+          id: record.property.id,
+          name: record.property.name,
+          contractAddress: record.property.contractAddress,
+        },
+      })),
+    };
   }
 
   async seedHistoricalRevenueForUser(userId: number) {
@@ -352,7 +443,9 @@ export class PortfolioService {
     propertyId: number,
     baseAmount: number,
   ) {
-    const months = [3, 2, 1].map((offset) => this.startOfMonth(this.shiftMonth(new Date(), -offset)));
+    const months = [3, 2, 1].map((offset) =>
+      this.startOfMonth(this.shiftMonth(new Date(), -offset)),
+    );
 
     for (const [index, month] of months.entries()) {
       await this.prisma.portfolioRevenue.upsert({
@@ -393,7 +486,9 @@ export class PortfolioService {
     }>,
   ) {
     const tokenAmount = this.parseHumanAmount(position.tokenAmount);
-    const currentValuation = Math.round(tokenAmount * position.property.tokenPrice);
+    const currentValuation = Math.round(
+      tokenAmount * position.property.tokenPrice,
+    );
     const nextRevenue = position.revenueRecords.find(
       (record) => record.month >= this.startOfMonth(new Date()),
     );
@@ -407,7 +502,13 @@ export class PortfolioService {
       projectedMonthlyIncome: position.projectedMonthlyIncome,
       projectedAnnualYieldPercent:
         position.investedTotal > 0
-          ? Number((((position.projectedMonthlyIncome * 12) / position.investedTotal) * 100).toFixed(2))
+          ? Number(
+              (
+                ((position.projectedMonthlyIncome * 12) /
+                  position.investedTotal) *
+                100
+              ).toFixed(2),
+            )
           : 0,
       lastPurchaseAt: position.lastPurchaseAt?.toISOString() ?? null,
       property: {
@@ -423,10 +524,13 @@ export class PortfolioService {
         tokenPrice: position.property.tokenPrice,
         contractAddress: position.property.contractAddress,
         treasuryWalletAddress: position.property.treasuryWalletAddress,
-        backendOperatorWalletAddress: position.property.backendOperatorWalletAddress,
+        backendOperatorWalletAddress:
+          position.property.backendOperatorWalletAddress,
         tokenizationStatus: position.property.tokenizationStatus,
         images: position.property.images,
-        keyPoints: position.property.keyPoints.map((keyPoint) => keyPoint.label),
+        keyPoints: position.property.keyPoints.map(
+          (keyPoint) => keyPoint.label,
+        ),
       },
       nextRevenue: nextRevenue
         ? {
@@ -453,7 +557,10 @@ export class PortfolioService {
       }>
     >,
   ) {
-    const buckets = new Map<string, { month: Date; paid: number; projected: number }>();
+    const buckets = new Map<
+      string,
+      { month: Date; paid: number; projected: number }
+    >();
 
     for (const position of positions) {
       for (const record of position.revenueRecords) {
@@ -483,7 +590,9 @@ export class PortfolioService {
   }
 
   private computeProjectedMonthlyIncome(investedTotal: number) {
-    const monthlyYieldBps = Number(process.env.PORTFOLIO_MONTHLY_YIELD_BPS ?? '45');
+    const monthlyYieldBps = Number(
+      process.env.PORTFOLIO_MONTHLY_YIELD_BPS ?? '45',
+    );
     return Math.max(1, Math.round((investedTotal * monthlyYieldBps) / 10000));
   }
 
@@ -501,7 +610,9 @@ export class PortfolioService {
   }
 
   private startOfMonth(baseDate: Date) {
-    return new Date(Date.UTC(baseDate.getUTCFullYear(), baseDate.getUTCMonth(), 1));
+    return new Date(
+      Date.UTC(baseDate.getUTCFullYear(), baseDate.getUTCMonth(), 1),
+    );
   }
 
   private formatMonthLabel(baseDate: Date) {
@@ -530,7 +641,9 @@ export class PortfolioService {
 
   private serializePurchaseHistoryEntry(entry: PurchaseHistoryOperation) {
     if (!entry.property) {
-      throw new NotFoundException('Bien introuvable pour cette opération d’achat.');
+      throw new NotFoundException(
+        'Bien introuvable pour cette opération d’achat.',
+      );
     }
 
     const property = entry.property;

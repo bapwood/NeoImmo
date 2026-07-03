@@ -16,6 +16,7 @@ import {
 } from '@prisma/client';
 import {
   Contract,
+  formatUnits,
   getBytes,
   HDNodeWallet,
   isAddress,
@@ -208,9 +209,152 @@ export class BlockchainService {
         ready: false,
         deploymentsPath,
         manifest,
-        error: error instanceof Error ? error.message : 'Blockchain unavailable.',
+        error:
+          error instanceof Error ? error.message : 'Blockchain unavailable.',
       };
     }
+  }
+
+  async getSystemOverview() {
+    const [backendWallet, treasuryWallet] = [
+      this.getBackendWallet(),
+      this.getTreasuryWallet(),
+    ];
+
+    let backendBalanceWei = '0';
+    let treasuryBalanceWei = '0';
+    let blockchainError: string | null = null;
+
+    if (this.isBlockchainEnabled()) {
+      try {
+        const provider = this.getProvider();
+        const [bb, tb] = await Promise.all([
+          provider.getBalance(backendWallet.address),
+          provider.getBalance(treasuryWallet.address),
+        ]);
+        backendBalanceWei = bb.toString();
+        treasuryBalanceWei = tb.toString();
+      } catch (error) {
+        blockchainError =
+          error instanceof Error ? error.message : 'RPC unavailable.';
+      }
+    }
+
+    const activeProperties = await this.prisma.property.findMany({
+      where: {
+        tokenizationStatus: { in: ['DEPLOYED', 'ACTIVE', 'PAUSED'] },
+      },
+      select: {
+        id: true,
+        name: true,
+        tokenizationStatus: true,
+        contractAddress: true,
+        tokenNumber: true,
+        tokenPrice: true,
+        tokenDecimals: true,
+        treasuryWalletAddress: true,
+        backendOperatorWalletAddress: true,
+      },
+    });
+
+    const propertiesWithBalances = await Promise.all(
+      activeProperties.map(async (property) => {
+        let treasuryTokenBalance: string | null = null;
+
+        if (
+          property.contractAddress &&
+          this.isBlockchainEnabled() &&
+          !blockchainError
+        ) {
+          try {
+            const provider = this.getProvider();
+            const tokenContract = new Contract(
+              property.contractAddress,
+              PROPERTY_SHARES_ABI,
+              provider,
+            );
+            const twAddress =
+              property.treasuryWalletAddress ?? treasuryWallet.address;
+            treasuryTokenBalance = (
+              await tokenContract.balanceOf(twAddress)
+            ).toString();
+          } catch {
+            treasuryTokenBalance = null;
+          }
+        }
+
+        const totalTokensBigInt =
+          BigInt(property.tokenNumber) * BigInt(10 ** property.tokenDecimals);
+        const treasuryBigInt =
+          treasuryTokenBalance !== null ? BigInt(treasuryTokenBalance) : null;
+        const soldBigInt =
+          treasuryBigInt !== null ? totalTokensBigInt - treasuryBigInt : null;
+
+        return {
+          id: property.id,
+          name: property.name,
+          tokenizationStatus: property.tokenizationStatus,
+          contractAddress: property.contractAddress,
+          tokenNumber: property.tokenNumber,
+          tokenPrice: property.tokenPrice,
+          tokenDecimals: property.tokenDecimals,
+          treasuryTokenBalance: treasuryTokenBalance,
+          tokensSold: soldBigInt !== null ? soldBigInt.toString() : null,
+          totalSupplyRaw: totalTokensBigInt.toString(),
+        };
+      }),
+    );
+
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+    const [totalProjectedAgg, paidThisMonthAgg, projectedThisMonthAgg] =
+      await Promise.all([
+        this.prisma.portfolioPosition.aggregate({
+          _sum: { projectedMonthlyIncome: true },
+        }),
+        this.prisma.portfolioRevenue.aggregate({
+          where: {
+            month: { gte: monthStart, lt: monthEnd },
+            status: 'PAID',
+          },
+          _sum: { amount: true },
+        }),
+        this.prisma.portfolioRevenue.aggregate({
+          where: {
+            month: { gte: monthStart, lt: monthEnd },
+            status: 'PROJECTED',
+          },
+          _sum: { amount: true },
+        }),
+      ]);
+
+    return {
+      wallets: {
+        backendOperator: {
+          address: backendWallet.address,
+          balanceWei: backendBalanceWei,
+        },
+        treasury: {
+          address: treasuryWallet.address,
+          balanceWei: treasuryBalanceWei,
+        },
+      },
+      blockchain: {
+        enabled: this.isBlockchainEnabled(),
+        error: blockchainError,
+      },
+      properties: propertiesWithBalances,
+      rent: {
+        totalProjectedMonthly:
+          totalProjectedAgg._sum.projectedMonthlyIncome ?? 0,
+        thisMonth: {
+          paid: paidThisMonthAgg._sum.amount ?? 0,
+          projected: projectedThisMonthAgg._sum.amount ?? 0,
+        },
+      },
+    };
   }
 
   async getPropertyMetadata(propertyId: number) {
@@ -230,6 +374,7 @@ export class BlockchainService {
   async listOperations(query: BlockchainOperationsQueryDto) {
     const where = this.buildOperationWhereClause(query);
     const take = query.limit ?? 20;
+    const skip = query.offset ?? 0;
 
     const [count, items] = await Promise.all([
       this.prisma.blockchainOperation.count({ where }),
@@ -239,6 +384,7 @@ export class BlockchainService {
           createdAt: 'desc',
         },
         take,
+        skip,
         include: blockchainOperationInclude,
       }),
     ]);
@@ -296,7 +442,8 @@ export class BlockchainService {
         treasuryWalletAddress:
           property.treasuryWalletAddress ?? systemWallets.treasuryWalletAddress,
         backendOperatorWalletAddress:
-          property.backendOperatorWalletAddress ?? systemWallets.backendOperatorWalletAddress,
+          property.backendOperatorWalletAddress ??
+          systemWallets.backendOperatorWalletAddress,
       },
       onChain: {
         available: this.isBlockchainEnabled(),
@@ -304,37 +451,34 @@ export class BlockchainService {
         totalSupply: null as string | null,
         treasuryBalance: null as string | null,
         backendAllowance: null as string | null,
-        funding: null as
-          | {
-              backendWalletAddress: string;
-              backendBalanceWei: string;
-              estimatedGasUnits: string | null;
-              gasPriceWei: string | null;
-              recommendedFundingWei: string | null;
-              shortfallWei: string | null;
-              ready: boolean;
-              error: string | null;
-            }
-          | null,
-        factoryInfo: null as
-          | {
-              token: string;
-              gate: string;
-              admin: string;
-              name: string;
-              symbol: string;
-              metadataUri: string;
-              metadataHash: string;
-              createdAt: string;
-            }
-          | null,
+        funding: null as {
+          backendWalletAddress: string;
+          backendBalanceWei: string;
+          estimatedGasUnits: string | null;
+          gasPriceWei: string | null;
+          recommendedFundingWei: string | null;
+          shortfallWei: string | null;
+          ready: boolean;
+          error: string | null;
+        } | null,
+        factoryInfo: null as {
+          token: string;
+          gate: string;
+          admin: string;
+          name: string;
+          symbol: string;
+          metadataUri: string;
+          metadataHash: string;
+          createdAt: string;
+        } | null,
         error: null as string | null,
       },
       latestOperations,
     };
 
     if (this.isBlockchainEnabled()) {
-      response.onChain.funding = await this.getPropertyDeploymentFundingSnapshot(property);
+      response.onChain.funding =
+        await this.getPropertyDeploymentFundingSnapshot(property);
     }
 
     if (!property.contractAddress || !this.isBlockchainEnabled()) {
@@ -357,13 +501,17 @@ export class BlockchainService {
       const treasuryWalletAddress =
         property.treasuryWalletAddress ?? this.getTreasuryWallet().address;
       const backendOperatorWalletAddress =
-        property.backendOperatorWalletAddress ?? this.getBackendWallet().address;
+        property.backendOperatorWalletAddress ??
+        this.getBackendWallet().address;
 
       const [totalSupply, treasuryBalance, backendAllowance, factoryInfoRaw] =
         await Promise.all([
           tokenContract.totalSupply(),
           tokenContract.balanceOf(treasuryWalletAddress),
-          tokenContract.allowance(treasuryWalletAddress, backendOperatorWalletAddress),
+          tokenContract.allowance(
+            treasuryWalletAddress,
+            backendOperatorWalletAddress,
+          ),
           propertyFactory.propertyInfo(property.contractAddress),
         ]);
 
@@ -486,11 +634,15 @@ export class BlockchainService {
     }
 
     if (!user.walletAddress) {
-      throw new BadRequestException('Aucune wallet renseignée pour cet utilisateur.');
+      throw new BadRequestException(
+        'Aucune wallet renseignée pour cet utilisateur.',
+      );
     }
 
     if (!user.countryCode) {
-      throw new BadRequestException('Aucun code pays ISO renseigné pour cet utilisateur.');
+      throw new BadRequestException(
+        'Aucun code pays ISO renseigné pour cet utilisateur.',
+      );
     }
 
     const requestId = randomUUID();
@@ -554,7 +706,8 @@ export class BlockchainService {
         },
         data: {
           status: BlockchainOperationStatus.FAILED,
-          errorMessage: error instanceof Error ? error.message : 'KYC sync failed.',
+          errorMessage:
+            error instanceof Error ? error.message : 'KYC sync failed.',
         },
       });
       throw error;
@@ -608,7 +761,8 @@ export class BlockchainService {
         },
         data: {
           status: BlockchainOperationStatus.FAILED,
-          errorMessage: error instanceof Error ? error.message : 'Wallet KYC sync failed.',
+          errorMessage:
+            error instanceof Error ? error.message : 'Wallet KYC sync failed.',
         },
       });
       throw error;
@@ -662,7 +816,8 @@ export class BlockchainService {
         },
         data: {
           status: BlockchainOperationStatus.FAILED,
-          errorMessage: error instanceof Error ? error.message : 'Blocklist update failed.',
+          errorMessage:
+            error instanceof Error ? error.message : 'Blocklist update failed.',
         },
       });
       throw error;
@@ -719,7 +874,10 @@ export class BlockchainService {
         },
         data: {
           status: BlockchainOperationStatus.FAILED,
-          errorMessage: error instanceof Error ? error.message : 'Blocked country update failed.',
+          errorMessage:
+            error instanceof Error
+              ? error.message
+              : 'Blocked country update failed.',
         },
       });
       throw error;
@@ -763,7 +921,8 @@ export class BlockchainService {
       );
     }
 
-    const fundingSnapshot = await this.getPropertyDeploymentFundingSnapshot(property);
+    const fundingSnapshot =
+      await this.getPropertyDeploymentFundingSnapshot(property);
 
     if (!fundingSnapshot.ready) {
       throw new BadRequestException(
@@ -849,34 +1008,49 @@ export class BlockchainService {
     });
 
     if (!operation || !operation.property || !operation.user) {
-      throw new NotFoundException('La demande de déploiement préparée est introuvable.');
+      throw new NotFoundException(
+        'La demande de déploiement préparée est introuvable.',
+      );
     }
 
     if (operation.type !== BlockchainOperationType.DEPLOY_PROPERTY) {
-      throw new BadRequestException('Cette demande préparée ne correspond pas à un déploiement.');
+      throw new BadRequestException(
+        'Cette demande préparée ne correspond pas à un déploiement.',
+      );
     }
 
     if (operation.property.id !== propertyId) {
-      throw new BadRequestException('Cette demande préparée ne correspond pas à ce bien.');
+      throw new BadRequestException(
+        'Cette demande préparée ne correspond pas à ce bien.',
+      );
     }
 
     if (operation.user.id !== adminUserId) {
-      throw new ForbiddenException('Cette demande préparée n’appartient pas à cet administrateur.');
+      throw new ForbiddenException(
+        'Cette demande préparée n’appartient pas à cet administrateur.',
+      );
     }
 
-    if (operation.status === BlockchainOperationStatus.CONFIRMED && operation.txHash) {
+    if (
+      operation.status === BlockchainOperationStatus.CONFIRMED &&
+      operation.txHash
+    ) {
       throw new ConflictException('Cette demande a deja ete executee.');
     }
 
     if (operation.status === BlockchainOperationStatus.SUBMITTED) {
-      throw new ConflictException('Cette demande est deja en cours d’execution.');
+      throw new ConflictException(
+        'Cette demande est deja en cours d’execution.',
+      );
     }
 
     if (operation.property.contractAddress) {
       throw new BadRequestException('Ce bien possède déjà un contrat déployé.');
     }
 
-    const fundingSnapshot = await this.getPropertyDeploymentFundingSnapshot(operation.property);
+    const fundingSnapshot = await this.getPropertyDeploymentFundingSnapshot(
+      operation.property,
+    );
 
     if (!fundingSnapshot.ready) {
       throw new BadRequestException(
@@ -887,10 +1061,13 @@ export class BlockchainService {
     }
 
     if (!operation.payload || typeof operation.payload !== 'object') {
-      throw new BadRequestException('Le payload de déploiement préparé est invalide.');
+      throw new BadRequestException(
+        'Le payload de déploiement préparé est invalide.',
+      );
     }
 
-    const preparedPayload = operation.payload as unknown as PreparedPropertyDeployOperationPayload;
+    const preparedPayload =
+      operation.payload as unknown as PreparedPropertyDeployOperationPayload;
 
     if (
       !preparedPayload.typedData ||
@@ -899,7 +1076,9 @@ export class BlockchainService {
       !preparedPayload.integrity?.hash ||
       !preparedPayload.integrity?.signature
     ) {
-      throw new BadRequestException('Le payload de déploiement préparé est incomplet.');
+      throw new BadRequestException(
+        'Le payload de déploiement préparé est incomplet.',
+      );
     }
 
     const recoveredWallet = verifyTypedData(
@@ -913,7 +1092,9 @@ export class BlockchainService {
       recoveredWallet.toLowerCase() !==
       preparedPayload.typedData.message.adminWallet.toLowerCase()
     ) {
-      throw new BadRequestException('Signature EIP-712 administrateur invalide.');
+      throw new BadRequestException(
+        'Signature EIP-712 administrateur invalide.',
+      );
     }
 
     if (
@@ -970,7 +1151,10 @@ export class BlockchainService {
         data: {
           status: BlockchainOperationStatus.FAILED,
           signature: payload.signature,
-          errorMessage: error instanceof Error ? error.message : 'Property deployment failed.',
+          errorMessage:
+            error instanceof Error
+              ? error.message
+              : 'Property deployment failed.',
         },
       });
       throw error;
@@ -1020,14 +1204,20 @@ export class BlockchainService {
         },
         data: {
           status: BlockchainOperationStatus.FAILED,
-          errorMessage: error instanceof Error ? error.message : 'Property deployment failed.',
+          errorMessage:
+            error instanceof Error
+              ? error.message
+              : 'Property deployment failed.',
         },
       });
       throw error;
     }
   }
 
-  async mintPropertyInventory(propertyId: number, payload: MintPropertyInventoryDto) {
+  async mintPropertyInventory(
+    propertyId: number,
+    payload: MintPropertyInventoryDto,
+  ) {
     this.ensureBlockchainEnabled();
 
     const property = await this.getPropertyForBlockchain(propertyId);
@@ -1109,14 +1299,350 @@ export class BlockchainService {
         },
         data: {
           status: BlockchainOperationStatus.FAILED,
-          errorMessage: error instanceof Error ? error.message : 'Property mint failed.',
+          errorMessage:
+            error instanceof Error ? error.message : 'Property mint failed.',
         },
       });
       throw error;
     }
   }
 
-  async setPropertyPurchaseAvailability(propertyId: number, available: boolean) {
+  async getPropertyRentManagement(propertyId: number) {
+    const property = await this.getPropertyForBlockchain(propertyId);
+    const decimals = property.tokenDecimals ?? 18;
+
+    let tokensSold: string | null = null;
+    let totalSupply: string | null = null;
+    let onChainError: string | null = null;
+
+    if (this.isBlockchainEnabled() && property.contractAddress) {
+      try {
+        const tokenContract = new Contract(
+          property.contractAddress,
+          PROPERTY_SHARES_ABI,
+          this.getProvider(),
+        );
+        const treasuryAddress =
+          property.treasuryWalletAddress ?? this.getTreasuryWallet().address;
+        const [totalSupplyRaw, treasuryBalanceRaw] = await Promise.all([
+          tokenContract.totalSupply(),
+          tokenContract.balanceOf(treasuryAddress),
+        ]);
+        const soldRaw = totalSupplyRaw - treasuryBalanceRaw;
+        tokensSold = formatUnits(soldRaw, decimals);
+        totalSupply = formatUnits(totalSupplyRaw, decimals);
+      } catch (error) {
+        onChainError =
+          error instanceof Error
+            ? error.message
+            : 'Lecture on-chain impossible.';
+      }
+    }
+
+    const revenueRows = await this.prisma.portfolioRevenue.findMany({
+      where: { propertyId },
+      orderBy: [{ month: 'desc' }],
+    });
+
+    const monthBuckets = new Map<
+      string,
+      {
+        month: string;
+        totalAmount: number;
+        paidAmount: number;
+        recipientsCount: number;
+        paidCount: number;
+      }
+    >();
+
+    for (const row of revenueRows) {
+      const key = row.month.toISOString();
+      const bucket = monthBuckets.get(key) ?? {
+        month: key,
+        totalAmount: 0,
+        paidAmount: 0,
+        recipientsCount: 0,
+        paidCount: 0,
+      };
+
+      bucket.totalAmount += row.amount;
+      bucket.recipientsCount += 1;
+
+      if (row.status === 'PAID') {
+        bucket.paidAmount += row.amount;
+        bucket.paidCount += 1;
+      }
+
+      monthBuckets.set(key, bucket);
+    }
+
+    const months = [...monthBuckets.values()]
+      .sort((left, right) => right.month.localeCompare(left.month))
+      .map((bucket) => ({
+        ...bucket,
+        label: this.formatRentMonthLabel(new Date(bucket.month)),
+        fullyPaid:
+          bucket.recipientsCount > 0 &&
+          bucket.paidCount === bucket.recipientsCount,
+      }));
+
+    return {
+      property: {
+        id: property.id,
+        name: property.name,
+        contractAddress: property.contractAddress,
+        tokenNumber: property.tokenNumber,
+        tokenPrice: property.tokenPrice,
+        tokenDecimals: decimals,
+        tokenizationStatus: property.tokenizationStatus,
+      },
+      tokensSold,
+      totalSupply,
+      onChainError,
+      months,
+    };
+  }
+
+  async getPropertyRentMonthDetail(propertyId: number, month: string) {
+    await this.getPropertyForBlockchain(propertyId);
+
+    const monthStart = this.startOfMonthUtc(new Date(month));
+    const monthEnd = this.shiftMonthUtc(monthStart, 1);
+
+    const rows = await this.prisma.portfolioRevenue.findMany({
+      where: {
+        propertyId,
+        month: {
+          gte: monthStart,
+          lt: monthEnd,
+        },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            walletAddress: true,
+          },
+        },
+        position: {
+          select: {
+            tokenAmount: true,
+          },
+        },
+      },
+      orderBy: {
+        amount: 'desc',
+      },
+    });
+
+    return rows.map((row) => ({
+      id: row.id,
+      status: row.status,
+      amount: row.amount,
+      txHash: row.txHash,
+      paidAt: row.paidAt?.toISOString() ?? null,
+      errorMessage: row.errorMessage,
+      tokenAmount: row.position.tokenAmount,
+      user: {
+        id: row.user.id,
+        email: row.user.email,
+        firstName: row.user.firstName,
+        lastName: row.user.lastName,
+        walletAddress: row.user.walletAddress,
+      },
+    }));
+  }
+
+  async payPropertyRent(propertyId: number, month: string) {
+    this.ensureBlockchainEnabled();
+
+    const property = await this.getPropertyForBlockchain(propertyId);
+
+    if (!property.contractAddress) {
+      throw new BadRequestException(
+        'Le bien doit être déployé avant de verser un loyer.',
+      );
+    }
+
+    const monthStart = this.startOfMonthUtc(new Date(month));
+    const monthEnd = this.shiftMonthUtc(monthStart, 1);
+
+    const rows = await this.prisma.portfolioRevenue.findMany({
+      where: {
+        propertyId,
+        status: 'PROJECTED',
+        month: {
+          gte: monthStart,
+          lt: monthEnd,
+        },
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    const treasuryWallet = this.getTreasuryWallet();
+    const results: Array<{
+      revenueId: number;
+      userId: number;
+      status: 'PAID' | 'FAILED' | 'SKIPPED';
+      txHash?: string;
+      reason?: string;
+    }> = [];
+
+    let paid = 0;
+    let failed = 0;
+    let skipped = 0;
+
+    for (const row of rows) {
+      if (!row.user.walletAddress) {
+        skipped += 1;
+        results.push({
+          revenueId: row.id,
+          userId: row.userId,
+          status: 'SKIPPED',
+          reason: 'Le client n’a pas encore renseigné de wallet on-chain.',
+        });
+        continue;
+      }
+
+      const claim = await this.prisma.portfolioRevenue.updateMany({
+        where: { id: row.id, status: 'PROJECTED' },
+        data: { status: 'PAID' },
+      });
+
+      if (claim.count === 0) {
+        // Already claimed and processed by a concurrent call.
+        continue;
+      }
+
+      const weiAmount = this.rentCentsToWei(row.amount);
+      const requestId = randomUUID();
+      const operation = await this.prisma.blockchainOperation.create({
+        data: {
+          requestId,
+          type: BlockchainOperationType.RENT_PAYOUT,
+          status: BlockchainOperationStatus.SUBMITTED,
+          propertyId: property.id,
+          userId: row.userId,
+          fromWallet: treasuryWallet.address,
+          toWallet: row.user.walletAddress,
+          amount: String(row.amount),
+          currency: 'EUR',
+          payload: {
+            portfolioRevenueId: row.id,
+            weiAmount: weiAmount.toString(),
+          } satisfies Prisma.JsonObject,
+        },
+      });
+
+      try {
+        const treasurySigner = this.getTreasurySigner();
+        const walletAddress = row.user.walletAddress;
+        const tx = await this.sendWithNonceRetry(() =>
+          treasurySigner.sendTransaction({
+            to: walletAddress,
+            value: weiAmount,
+          }),
+        );
+        const receipt = await tx.wait();
+        const txHash = receipt?.hash ?? tx.hash;
+
+        await this.prisma.$transaction([
+          this.prisma.blockchainOperation.update({
+            where: { id: operation.id },
+            data: {
+              status: BlockchainOperationStatus.CONFIRMED,
+              txHash,
+            },
+          }),
+          this.prisma.portfolioRevenue.update({
+            where: { id: row.id },
+            data: {
+              status: 'PAID',
+              txHash,
+              paidAt: new Date(),
+              errorMessage: null,
+              label: 'Distribution versée',
+            },
+          }),
+        ]);
+
+        paid += 1;
+        results.push({
+          revenueId: row.id,
+          userId: row.userId,
+          status: 'PAID',
+          txHash,
+        });
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : 'Versement de loyer échoué.';
+
+        await this.prisma.$transaction([
+          this.prisma.blockchainOperation.update({
+            where: { id: operation.id },
+            data: {
+              status: BlockchainOperationStatus.FAILED,
+              errorMessage: message,
+            },
+          }),
+          this.prisma.portfolioRevenue.update({
+            where: { id: row.id },
+            data: {
+              status: 'PROJECTED',
+              errorMessage: message,
+            },
+          }),
+        ]);
+
+        failed += 1;
+        results.push({
+          revenueId: row.id,
+          userId: row.userId,
+          status: 'FAILED',
+          reason: message,
+        });
+      }
+    }
+
+    return { paid, failed, skipped, results };
+  }
+
+  private rentCentsToWei(cents: number): bigint {
+    const weiPerCent = BigInt(
+      this.configService.get<string>('BLOCKCHAIN_RENT_WEI_PER_EUR_CENT') ??
+        '100000000000000',
+    );
+    return BigInt(cents) * weiPerCent;
+  }
+
+  private startOfMonthUtc(baseDate: Date) {
+    return new Date(
+      Date.UTC(baseDate.getUTCFullYear(), baseDate.getUTCMonth(), 1),
+    );
+  }
+
+  private shiftMonthUtc(baseDate: Date, offset: number) {
+    const nextDate = new Date(baseDate);
+    nextDate.setUTCMonth(nextDate.getUTCMonth() + offset);
+    return nextDate;
+  }
+
+  private formatRentMonthLabel(baseDate: Date) {
+    return new Intl.DateTimeFormat('fr-FR', {
+      month: 'short',
+      year: 'numeric',
+    }).format(baseDate);
+  }
+
+  async setPropertyPurchaseAvailability(
+    propertyId: number,
+    available: boolean,
+  ) {
     const property = await this.getPropertyForBlockchain(propertyId);
 
     if (!property.contractAddress) {
@@ -1213,7 +1739,9 @@ export class BlockchainService {
     }
 
     if (!property.contractAddress) {
-      throw new BadRequestException('Le bien n’est pas encore déployé on-chain.');
+      throw new BadRequestException(
+        'Le bien n’est pas encore déployé on-chain.',
+      );
     }
 
     if (property.tokenizationStatus !== TokenizationStatus.ACTIVE) {
@@ -1228,7 +1756,10 @@ export class BlockchainService {
       PROPERTY_SHARES_ABI,
       this.getProvider(),
     );
-    const amountAsUnits = parseUnits(payload.amount, property.tokenDecimals ?? 18);
+    const amountAsUnits = parseUnits(
+      payload.amount,
+      property.tokenDecimals ?? 18,
+    );
     const balance = await tokenContract.balanceOf(treasuryWallet.address);
 
     if (balance < amountAsUnits) {
@@ -1317,19 +1848,28 @@ export class BlockchainService {
     }
 
     if (expectedUserId != null && operation.user.id !== expectedUserId) {
-      throw new ForbiddenException('Cette demande préparée n’appartient pas à ce client.');
+      throw new ForbiddenException(
+        'Cette demande préparée n’appartient pas à ce client.',
+      );
     }
 
-    if (operation.status === BlockchainOperationStatus.CONFIRMED && operation.txHash) {
+    if (
+      operation.status === BlockchainOperationStatus.CONFIRMED &&
+      operation.txHash
+    ) {
       throw new ConflictException('Cette demande a deja ete executee.');
     }
 
     if (operation.status === BlockchainOperationStatus.SUBMITTED) {
-      throw new ConflictException('Cette demande est deja en cours d’execution.');
+      throw new ConflictException(
+        'Cette demande est deja en cours d’execution.',
+      );
     }
 
     if (!operation.payload || typeof operation.payload !== 'object') {
-      throw new BadRequestException('Le payload de marché préparé est invalide.');
+      throw new BadRequestException(
+        'Le payload de marché préparé est invalide.',
+      );
     }
 
     const prepared = operation.payload as unknown as PreparedMarketplacePayload;
@@ -1340,7 +1880,9 @@ export class BlockchainService {
       payload.signature,
     );
 
-    if (recoveredWallet.toLowerCase() !== prepared.message.wallet.toLowerCase()) {
+    if (
+      recoveredWallet.toLowerCase() !== prepared.message.wallet.toLowerCase()
+    ) {
       throw new BadRequestException('Signature EIP-712 invalide.');
     }
 
@@ -1430,7 +1972,10 @@ export class BlockchainService {
         data: {
           status: BlockchainOperationStatus.FAILED,
           signature: payload.signature,
-          errorMessage: error instanceof Error ? error.message : 'Primary buy execution failed.',
+          errorMessage:
+            error instanceof Error
+              ? error.message
+              : 'Primary buy execution failed.',
         },
       });
       throw error;
@@ -1445,10 +1990,7 @@ export class BlockchainService {
       this.getBackendSigner(),
     );
     const allowTx = await this.sendWithNonceRetry(() =>
-      kycRegistry.setAllowed(
-        payload.walletAddress,
-        payload.allowed ?? true,
-      ),
+      kycRegistry.setAllowed(payload.walletAddress, payload.allowed ?? true),
     );
     await allowTx.wait();
 
@@ -1499,8 +2041,16 @@ export class BlockchainService {
     try {
       const contracts = await this.resolveContractAddresses();
       const provider = this.getProvider();
-      const kycRegistry = new Contract(contracts.kycRegistry, KYC_REGISTRY_ABI, provider);
-      const transferGate = new Contract(contracts.transferGate, TRANSFER_GATE_ABI, provider);
+      const kycRegistry = new Contract(
+        contracts.kycRegistry,
+        KYC_REGISTRY_ABI,
+        provider,
+      );
+      const transferGate = new Contract(
+        contracts.transferGate,
+        TRANSFER_GATE_ABI,
+        provider,
+      );
 
       const [allowed, rawCountryCode, walletBlocklisted] = await Promise.all([
         kycRegistry.isAllowed(walletAddress),
@@ -1510,7 +2060,9 @@ export class BlockchainService {
       const onChainCountryCode =
         this.bytes2ToCountryCode(rawCountryCode) ?? fallbackCountryCode ?? null;
       const countryBlocked = onChainCountryCode
-        ? await transferGate.blockedCountries(this.countryCodeToBytes2(onChainCountryCode))
+        ? await transferGate.blockedCountries(
+            this.countryCodeToBytes2(onChainCountryCode),
+          )
         : null;
 
       return {
@@ -1538,7 +2090,10 @@ export class BlockchainService {
     }
   }
 
-  private async ensureTreasuryAllowance(propertyAddress: string, minimumAmount: bigint) {
+  private async ensureTreasuryAllowance(
+    propertyAddress: string,
+    minimumAmount: bigint,
+  ) {
     const treasuryWallet = this.getTreasuryWallet();
     const backendWallet = this.getBackendWallet();
     const treasuryTokenContract = new Contract(
@@ -1556,10 +2111,7 @@ export class BlockchainService {
     }
 
     const approvalTx = await this.sendWithNonceRetry(() =>
-      treasuryTokenContract.approve(
-        backendWallet.address,
-        MaxUint256,
-      ),
+      treasuryTokenContract.approve(backendWallet.address, MaxUint256),
     );
     await approvalTx.wait();
 
@@ -1580,8 +2132,11 @@ export class BlockchainService {
     }
   }
 
-  private async getPropertyDeploymentFundingSnapshot(property: PropertyWithKeyPoints) {
-    const backendWalletAddress = this.getSystemWalletAddressesSafe().backendOperatorWalletAddress;
+  private async getPropertyDeploymentFundingSnapshot(
+    property: PropertyWithKeyPoints,
+  ) {
+    const backendWalletAddress =
+      this.getSystemWalletAddressesSafe().backendOperatorWalletAddress;
 
     if (!this.isBlockchainEnabled()) {
       return {
@@ -1622,9 +2177,11 @@ export class BlockchainService {
       }
 
       const feeData = await provider.getFeeData();
-      const gasPrice = feeData.maxFeePerGas ?? feeData.gasPrice ?? parseUnits('2', 'gwei');
+      const gasPrice =
+        feeData.maxFeePerGas ?? feeData.gasPrice ?? parseUnits('2', 'gwei');
       const backendBalance = await provider.getBalance(backendWallet.address);
-      const recommendedFundingWei = (estimatedGasUnits * gasPrice * BigInt(120)) / BigInt(100);
+      const recommendedFundingWei =
+        (estimatedGasUnits * gasPrice * BigInt(120)) / BigInt(100);
       const shortfallWei =
         backendBalance >= recommendedFundingWei
           ? BigInt(0)
@@ -1671,7 +2228,8 @@ export class BlockchainService {
       PROPERTY_FACTORY_ABI,
       this.getBackendSigner(),
     );
-    const metadataPayload = params.operationPayload as PreparedPropertyDeployOperationPayload;
+    const metadataPayload =
+      params.operationPayload as PreparedPropertyDeployOperationPayload;
     const createProperty = propertyFactory.getFunction('createProperty');
     const tokenAddress = await createProperty.staticCall(
       params.property.name,
@@ -1766,7 +2324,9 @@ export class BlockchainService {
     };
   }
 
-  private async getStoredOrFreshMetadataPayload(property: PropertyWithKeyPoints) {
+  private async getStoredOrFreshMetadataPayload(
+    property: PropertyWithKeyPoints,
+  ) {
     const deployOperation = await this.prisma.blockchainOperation.findFirst({
       where: {
         propertyId: property.id,
@@ -1778,7 +2338,10 @@ export class BlockchainService {
       },
     });
 
-    if (deployOperation?.payload && typeof deployOperation.payload === 'object') {
+    if (
+      deployOperation?.payload &&
+      typeof deployOperation.payload === 'object'
+    ) {
       const stored = deployOperation.payload as {
         payload: Record<string, unknown>;
         metadataUri: string;
@@ -1879,8 +2442,14 @@ export class BlockchainService {
       .replace(/[^A-Z0-9 ]/g, ' ')
       .split(/\s+/)
       .filter(Boolean);
-    const acronym = words.map((word) => word.charAt(0)).join('').slice(0, 6);
-    const compact = name.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+    const acronym = words
+      .map((word) => word.charAt(0))
+      .join('')
+      .slice(0, 6);
+    const compact = name
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, '')
+      .slice(0, 6);
     const fallback = `NEO${propertyId}`.slice(0, 6);
     const symbol = acronym || compact || fallback;
 
@@ -1923,7 +2492,9 @@ export class BlockchainService {
     const normalized = countryCode.trim().toUpperCase();
 
     if (!/^[A-Z]{2}$/.test(normalized)) {
-      throw new BadRequestException('Le code pays doit être un code ISO alpha-2.');
+      throw new BadRequestException(
+        'Le code pays doit être un code ISO alpha-2.',
+      );
     }
 
     return `0x${Buffer.from(normalized, 'utf8').toString('hex')}`;
@@ -1979,7 +2550,9 @@ export class BlockchainService {
 
   private getProvider() {
     if (!this.provider) {
-      const chainId = Number(this.configService.get<string>('BLOCKCHAIN_CHAIN_ID') ?? '31337');
+      const chainId = Number(
+        this.configService.get<string>('BLOCKCHAIN_CHAIN_ID') ?? '31337',
+      );
       this.provider = new JsonRpcProvider(this.getRpcUrl(), chainId);
     }
 
@@ -2015,13 +2588,17 @@ export class BlockchainService {
     accountIndexName: string,
     fallbackIndex: number,
   ) {
-    const explicitPrivateKey = this.configService.get<string>(privateKeyName)?.trim();
+    const explicitPrivateKey = this.configService
+      .get<string>(privateKeyName)
+      ?.trim();
 
     if (explicitPrivateKey) {
       return new Wallet(explicitPrivateKey, this.getProvider());
     }
 
-    const mnemonic = this.configService.get<string>('BLOCKCHAIN_MNEMONIC')?.trim();
+    const mnemonic = this.configService
+      .get<string>('BLOCKCHAIN_MNEMONIC')
+      ?.trim();
 
     if (!mnemonic) {
       throw new ServiceUnavailableException(
@@ -2112,8 +2689,9 @@ export class BlockchainService {
 
   private getDefaultCountryCode() {
     return (
-      this.configService.get<string>('BLOCKCHAIN_DEFAULT_COUNTRY_CODE')?.trim() ||
-      'FR'
+      this.configService
+        .get<string>('BLOCKCHAIN_DEFAULT_COUNTRY_CODE')
+        ?.trim() || 'FR'
     );
   }
 
@@ -2154,11 +2732,19 @@ export class BlockchainService {
       manifest?.contracts.propertyFactory;
 
     if (!kycRegistry || !transferGate || !propertyFactory) {
-      throw new ServiceUnavailableException('Contract addresses are not configured.');
+      throw new ServiceUnavailableException(
+        'Contract addresses are not configured.',
+      );
     }
 
-    if (!isAddress(kycRegistry) || !isAddress(transferGate) || !isAddress(propertyFactory)) {
-      throw new ServiceUnavailableException('One or more contract addresses are invalid.');
+    if (
+      !isAddress(kycRegistry) ||
+      !isAddress(transferGate) ||
+      !isAddress(propertyFactory)
+    ) {
+      throw new ServiceUnavailableException(
+        'One or more contract addresses are invalid.',
+      );
     }
 
     return {

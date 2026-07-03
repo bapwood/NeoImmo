@@ -177,10 +177,26 @@ export default function PropertyEditor({
     }));
   }
 
+  function getMissingFields(): string[] {
+    return propertyFields
+      .filter((field) => field.required && !formState[field.key]?.trim())
+      .map((field) => field.label);
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!session) {
+      return;
+    }
+
+    const missing = getMissingFields();
+
+    if (missing.length > 0) {
+      setNotice({
+        tone: 'error',
+        message: `Champs obligatoires manquants : ${missing.join(', ')}.`,
+      });
       return;
     }
 
@@ -338,6 +354,20 @@ export default function PropertyEditor({
 
           {notice ? (
             <div className={styles.noticeError}>{notice.message}</div>
+          ) : null}
+
+          {!loading && getMissingFields().length > 0 ? (
+            <div style={{
+              padding: '0.75rem 1rem',
+              borderRadius: '12px',
+              background: 'rgba(var(--theme-secondary-rgb), 0.2)',
+              border: '1px solid rgba(var(--theme-secondary-rgb), 0.5)',
+              fontSize: '0.875rem',
+              color: 'var(--foreground)',
+            }}>
+              <strong>Champs requis non renseignés :</strong>{' '}
+              {getMissingFields().join(', ')}
+            </div>
           ) : null}
 
           {loading ? (

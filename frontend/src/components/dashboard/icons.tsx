@@ -75,6 +75,40 @@ export function ShieldIcon(props: IconProps) {
   );
 }
 
+export function WalletIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <rect x="2" y="7" width="20" height="14" rx="3" />
+      <path d="M16 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" fill="currentColor" stroke="none" />
+      <path d="M2 10h20" />
+      <path d="M6 4l4-2 4 2" />
+    </BaseIcon>
+  );
+}
+
+export function RentIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <rect x="2.5" y="6" width="19" height="12" rx="2.5" />
+      <circle cx="12" cy="12" r="2.8" />
+      <path d="M6 6v-.5A1.5 1.5 0 0 1 7.5 4h9A1.5 1.5 0 0 1 18 5.5V6" />
+      <path d="M5 9h.01" />
+      <path d="M19 15h.01" />
+    </BaseIcon>
+  );
+}
+
+export function TransactionsIcon(props: IconProps) {
+  return (
+    <BaseIcon {...props}>
+      <path d="M4 8h13l-3-3.5" />
+      <path d="M20 16H7l3 3.5" />
+      <path d="M4 8v8h3" />
+      <path d="M20 16V8h-3" />
+    </BaseIcon>
+  );
+}
+
 export function SearchIcon(props: IconProps) {
   return (
     <BaseIcon {...props}>

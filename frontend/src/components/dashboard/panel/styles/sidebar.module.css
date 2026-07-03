@@ -166,8 +166,56 @@
   color: var(--muted);
 }
 
+.hamburger {
+  display: none;
+  position: fixed;
+  bottom: 1.25rem;
+  right: 1.25rem;
+  z-index: 100;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+  color: white;
+  font-size: 1.4rem;
+  cursor: pointer;
+  box-shadow: 0 4px 24px rgba(0, 82, 204, 0.35);
+  transition: transform 180ms ease;
+}
+
+.hamburger:hover {
+  transform: scale(1.08);
+}
+
 @media (max-width: 1180px) {
   .sidebar {
-    order: 2;
+    position: fixed;
+    top: 0;
+    left: -320px;
+    width: 290px;
+    height: 100vh;
+    z-index: 100;
+    background: var(--background);
+    box-shadow: 4px 0 32px rgba(0, 82, 204, 0.15);
+    padding: 1.25rem;
+    transition: left 280ms cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+  }
+
+  .sidebarOpen {
+    left: 0;
+  }
+
+  .hamburger {
+    display: grid;
+    place-items: center;
+  }
+}
+
+@media (max-width: 860px) {
+  .hamburger {
+    bottom: 1rem;
+    right: 1rem;
   }
 }

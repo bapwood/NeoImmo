@@ -15,9 +15,9 @@ declare global {
   }
 }
 
-const localChainId = Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? '31337');
-const localChainIdHex = `0x${localChainId.toString(16)}`;
-const localChainRpcUrl = process.env.NEXT_PUBLIC_CHAIN_RPC_URL ?? 'http://127.0.0.1:8545';
+const localChainIdHex = '0x7a69';
+const localChainRpcUrl = 'http://127.0.0.1:8545';
+const localChainName = 'NeoImmo Local';
 
 function getProvider() {
   if (typeof window === 'undefined' || !window.ethereum) {
@@ -78,7 +78,7 @@ export async function ensureSupportedChain() {
       params: [
         {
           chainId: localChainIdHex,
-          chainName: 'NeoImmo Local',
+          chainName: localChainName,
           nativeCurrency: {
             name: 'Ether',
             symbol: 'ETH',

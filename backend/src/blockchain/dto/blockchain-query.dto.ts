@@ -47,14 +47,25 @@ export class BlockchainOperationsQueryDto {
     description: 'Limit the number of operations returned',
     example: 20,
     default: 20,
-    maximum: 100,
+    maximum: 200,
   })
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  @Max(100)
+  @Max(200)
   @IsOptional()
   limit?: number;
+
+  @ApiPropertyOptional({
+    description: 'Number of operations to skip, for pagination',
+    example: 0,
+    default: 0,
+  })
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  offset?: number;
 
   @ApiPropertyOptional({
     description: 'Filter by prepared request identifier',

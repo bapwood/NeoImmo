@@ -8,7 +8,10 @@
     "node": "hardhat node --hostname 0.0.0.0",
     "deploy:local:core": "hardhat run scripts/00_deploy_kyc_gate.ts --network localhost",
     "deploy:local:factory": "hardhat run scripts/01_deploy_property.ts --network localhost",
-    "deploy:local": "npm run deploy:local:core && npm run deploy:local:factory"
+    "deploy:local": "npm run deploy:local:core && npm run deploy:local:factory",
+    "deploy:sepolia:core": "hardhat run scripts/00_deploy_kyc_gate.ts --network sepolia",
+    "deploy:sepolia:factory": "hardhat run scripts/01_deploy_property.ts --network sepolia",
+    "deploy:sepolia": "npm run deploy:sepolia:core && npm run deploy:sepolia:factory"
   },
   "keywords": [],
   "author": "",

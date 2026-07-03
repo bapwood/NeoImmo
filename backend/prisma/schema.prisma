@@ -39,6 +39,7 @@ enum BlockchainOperationType {
   MINT_PROPERTY
   PREPARE_PRIMARY_BUY
   EXECUTE_PRIMARY_BUY
+  RENT_PAYOUT
 }
 
 enum BlockchainOperationStatus {
@@ -182,19 +183,22 @@ model PortfolioPosition {
 }
 
 model PortfolioRevenue {
-  id         Int                   @id @default(autoincrement())
-  positionId Int
-  userId     Int
-  propertyId Int
-  month      DateTime
-  amount     Int
-  status     PortfolioRevenueStatus @default(PROJECTED)
-  label      String?
-  createdAt  DateTime              @default(now())
-  updatedAt  DateTime              @updatedAt
-  position   PortfolioPosition     @relation(fields: [positionId], references: [id], onDelete: Cascade)
-  user       User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  property   Property              @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  id           Int                    @id @default(autoincrement())
+  positionId   Int
+  userId       Int
+  propertyId   Int
+  month        DateTime
+  amount       Int
+  status       PortfolioRevenueStatus @default(PROJECTED)
+  label        String?
+  txHash       String?
+  paidAt       DateTime?
+  errorMessage String?
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+  position     PortfolioPosition      @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  user         User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property     Property               @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   @@unique([positionId, month])
   @@index([userId, month])

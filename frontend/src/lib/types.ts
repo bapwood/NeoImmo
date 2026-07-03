@@ -13,7 +13,8 @@ export type BlockchainOperationType =
   | 'DEPLOY_PROPERTY'
   | 'MINT_PROPERTY'
   | 'PREPARE_PRIMARY_BUY'
-  | 'EXECUTE_PRIMARY_BUY';
+  | 'EXECUTE_PRIMARY_BUY'
+  | 'RENT_PAYOUT';
 export type BlockchainOperationStatus =
   | 'PREPARED'
   | 'SUBMITTED'

@@ -19,6 +19,7 @@ type DashboardTopbarProps = {
   isAdmin: boolean;
   onLogout: () => void;
   onOpenWalletSettings: () => void;
+  onWalletLinked?: (address: string) => void;
   onQueryChange: (value: string) => void;
   query: string;
   session: AuthSession | null;
@@ -30,6 +31,7 @@ export default function DashboardTopbar({
   isAdmin,
   onLogout,
   onOpenWalletSettings,
+  onWalletLinked,
   onQueryChange,
   query,
   session,
@@ -73,14 +75,19 @@ export default function DashboardTopbar({
 
   const connectWallet = async () => {
     if (typeof window === 'undefined' || !(window as any).ethereum) {
-      alert('MetaMask non détecté');
+      alert('MetaMask non détecté. Installez l\'extension MetaMask pour continuer.');
       return;
     }
 
     try {
       await ensureSupportedChain();
       const accounts = await requestWalletAccounts();
-      setAccount(accounts[0] ?? null);
+      const connected = accounts[0] ?? null;
+      setAccount(connected);
+
+      if (connected) {
+        onWalletLinked?.(connected);
+      }
     } catch (err) {
       console.error(err);
     }
@@ -92,13 +99,14 @@ export default function DashboardTopbar({
     Boolean(account) &&
     Boolean(expectedWallet) &&
     account!.toLowerCase() === expectedWallet!.toLowerCase();
+
   const walletStatusLabel = !account
-    ? 'Wallet déconnectée'
+    ? 'Wallet non connectée'
     : expectedWallet && !walletMatchesProfile
       ? 'Wallet différente du profil'
       : session?.user.role === 'ADMIN'
-        ? 'Wallet admin connectée'
-      : 'Wallet connectée';
+        ? 'Wallet admin'
+        : 'Wallet liée';
   const walletStatusClassName = !account
     ? styles.walletStatusDisconnected
     : expectedWallet && !walletMatchesProfile
@@ -108,11 +116,8 @@ export default function DashboardTopbar({
   const showSearch =
     activePanel === 'opportunities' ||
     (activeResource?.allowSearch && activePanel !== 'overview');
-  const shouldRedirectToWalletSettings =
-    session?.user.role === 'CLIENT' && Boolean(account);
-  const handleWalletButtonClick = shouldRedirectToWalletSettings
-    ? onOpenWalletSettings
-    : () => void connectWallet();
+
+  const handleWalletButtonClick = () => void connectWallet();
 
   return (
     <header className={styles.topbar}>
@@ -169,7 +174,7 @@ export default function DashboardTopbar({
             className={styles.walletButton}
             onClick={handleWalletButtonClick}
           >
-            {account ? 'Changer de wallet' : 'Connecter la wallet'}
+            {account ? 'Changer de wallet' : 'Connecter MetaMask'}
           </button>
         </div>
 

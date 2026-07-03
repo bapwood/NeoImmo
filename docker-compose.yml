@@ -34,7 +34,7 @@ services:
       - --accounts
       - "10"
       - --mnemonic
-      - ${BLOCKCHAIN_MNEMONIC:-test test test test test test test test test test test junk}
+      - "top proof city smart unable drink order festival flush desert umbrella social"
     ports:
       - "${HARDHAT_PORT:-8545}:8545"
     healthcheck:
@@ -56,6 +56,9 @@ services:
         condition: service_healthy
     environment:
       RPC_LOCALHOST: "http://chain:8545"
+      BLOCKCHAIN_MNEMONIC: "top proof city smart unable drink order festival flush desert umbrella social"
+    volumes:
+      - deployments:/usr/src/app/deployments
     networks:
       - NeoImmo-docker
 
@@ -70,10 +73,21 @@ services:
       database:
         condition: service_healthy
       chain-deployer:
-        condition: service_started
+        condition: service_completed_successfully
     environment:
       DATABASE_URL: ${DATABASE_URL}
       SERVER_PORT: ${SERVER_PORT}
+      JWT_SECRET: ${JWT_SECRET}
+      RPC_LOCALHOST: "http://chain:8545"
+      BLOCKCHAIN_ENABLED: "true"
+      BLOCKCHAIN_RPC_URL: "http://chain:8545"
+      BLOCKCHAIN_MNEMONIC: "top proof city smart unable drink order festival flush desert umbrella social"
+      BLOCKCHAIN_BACKEND_ACCOUNT_INDEX: "0"
+      BLOCKCHAIN_TREASURY_ACCOUNT_INDEX: "1"
+      BLOCKCHAIN_CHAIN_ID: "31337"
+      BLOCKCHAIN_DEPLOYMENTS_FILE: "/usr/src/app/deployments/local.json"
+    volumes:
+      - deployments:/usr/src/app/deployments
     networks:
       - NeoImmo-docker
     command: sh -c "npx prisma migrate deploy && npm run start:prod"
@@ -93,46 +107,9 @@ services:
       database:
         condition: service_healthy
 
-  # otterscan:
-  #   container_name: otterscan
-  #   image: otterscan/otterscan:latest
-  #   restart: always
-  #   depends_on:
-  #     chain:
-  #       condition: service_healthy
-  #   environment:
-  #     OTS2: "false"
-  #     OTTERSCAN_CONFIG: >-
-  #       {
-  #         "erigonURL": "http://localhost:${HARDHAT_PORT:-8545}",
-  #         "experimentalFixedChainId": 31337,
-  #         "branding": {
-  #           "siteName": "NeoImmo Explorer",
-  #           "networkTitle": "Local Devnet",
-  #           "hideAnnouncements": true
-  #         },
-  #         "chainInfo": {
-  #           "name": "NeoImmo Local Devnet",
-  #           "faucets": [],
-  #           "nativeCurrency": {
-  #             "name": "Ether",
-  #             "symbol": "ETH",
-  #             "decimals": 18
-  #           }
-  #         },
-  #         "externalDataSources": {
-  #           "ccip": {
-  #             "ensLookups": false
-  #           }
-  #         }
-  #       }
-  #   ports:
-  #     - "${OTTERSCAN_PORT:-5100}:80"
-  #   networks:
-  #     - NeoImmo-docker
-
 volumes:
   pgdata:
+  deployments:
 
 networks:
   NeoImmo-docker:

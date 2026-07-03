@@ -158,6 +158,8 @@ function getOperationLabel(type: BlockchainOperationRecord['type']) {
       return 'Préparation achat';
     case 'EXECUTE_PRIMARY_BUY':
       return 'Exécution achat';
+    case 'RENT_PAYOUT':
+      return 'Versement de loyer';
     case 'SYNC_WALLET_KYC':
       return 'Sync KYC';
     case 'SET_BLOCKLIST':
@@ -296,7 +298,7 @@ export default function PropertyTokenization({
 
       setNotice({
         tone: 'success',
-        message: 'Le contrat du bien a été déployé après validation de la wallet admin.',
+        message: `Le contrat du bien a été déployé après validation de la wallet admin.`,
       });
       await loadView(session);
     } catch (requestError) {
@@ -339,7 +341,7 @@ export default function PropertyTokenization({
 
       setNotice({
         tone: 'success',
-        message: 'L’inventaire primaire a bien été minté sur la trésorerie admin.',
+        message: "L'inventaire primaire a bien été minté sur la trésorerie admin.",
       });
       await loadView(session);
     } catch (requestError) {
@@ -371,7 +373,7 @@ export default function PropertyTokenization({
     if (!backendWalletAddress) {
       setNotice({
         tone: 'error',
-        message: 'La wallet backend opérateur est indisponible pour ce financement.',
+        message: `La wallet backend opérateur est indisponible pour ce financement.`,
       });
       return;
     }
@@ -379,7 +381,7 @@ export default function PropertyTokenization({
     if (shortfallWei <= BigInt(0)) {
       setNotice({
         tone: 'success',
-        message: 'La wallet backend dispose déjà du solde nécessaire au déploiement.',
+        message: `La wallet backend dispose déjà du solde nécessaire au déploiement.`,
       });
       return;
     }
@@ -439,8 +441,8 @@ export default function PropertyTokenization({
       setNotice({
         tone: 'success',
         message: available
-          ? 'Le bien a été remis à l’achat client.'
-          : 'Le bien a été retiré de l’achat client.',
+          ? "Le bien a été remis à l'achat client."
+          : "Le bien a été retiré de l'achat client.",
       });
       await loadView(session);
     } catch (requestError) {
@@ -502,6 +504,9 @@ export default function PropertyTokenization({
     );
   }
 
+  const step1Done = deploymentReady;
+  const step2Done = tokenizedAndActive || purchasePaused;
+
   return (
     <main className={styles.shell}>
       <section className={styles.surface}>
@@ -511,9 +516,8 @@ export default function PropertyTokenization({
             className={styles.backButton}
             onClick={() => router.push('/?panel=property')}
           >
-            Retour aux actifs
+            ← Retour aux actifs
           </button>
-
           <div className={styles.headerActions}>
             <button
               type="button"
@@ -528,506 +532,328 @@ export default function PropertyTokenization({
               onClick={() => void loadView(session)}
               disabled={loading}
             >
-              Actualiser
+              {loading ? 'Actualisation...' : 'Actualiser'}
             </button>
           </div>
         </header>
 
         {error ? <div className={styles.noticeError}>{error}</div> : null}
-        {notice?.tone === 'success' ? (
-          <div className={styles.noticeSuccess}>{notice.message}</div>
-        ) : null}
-        {notice?.tone === 'error' ? (
-          <div className={styles.noticeError}>{notice.message}</div>
-        ) : null}
+        {notice?.tone === 'success' && <div className={styles.noticeSuccess}>{notice.message}</div>}
+        {notice?.tone === 'error' && <div className={styles.noticeError}>{notice.message}</div>}
 
         {property && propertyRecord && onChainSnapshot ? (
           <>
+            {/* Hero */}
             <section className={styles.hero}>
               <div className={styles.heroCopy}>
-                <div className={styles.eyebrow}>Tokenisation de l’actif</div>
+                <div className={styles.eyebrow}>Tokenisation de l'actif</div>
                 <h1 className={styles.title}>{property.name}</h1>
-                <p className={styles.description}>{property.description}</p>
-
                 <div className={styles.heroMeta}>
                   <span className={styles.metaPill}>{property.localization}</span>
                   <span className={styles.metaPill}>{property.livingArea}</span>
                   <span className={styles.metaPill}>{property.roomNumber} pièces</span>
-                  <span className={styles.metaPill}>{property.bathroomNumber} sdb</span>
                 </div>
-
                 <div className={styles.statusRow}>
-                  <span
-                    className={
-                      tokenizedAndActive
-                        ? styles.statusBadgeActive
-                        : styles.statusBadgeInactive
-                    }
-                  >
+                  <span className={tokenizedAndActive ? styles.statusBadgeActive : styles.statusBadgeInactive}>
                     {getStatusLabel(propertyRecord.tokenizationStatus)}
                   </span>
-                  <span className={styles.scorePill}>Score {property.score}/100</span>
+                  <span className={styles.scorePill}>{formatCurrency(primaryValue)} total</span>
                 </div>
               </div>
-
               <div className={styles.heroVisual}>
-                {coverImage ? (
-                  <div
-                    className={styles.imageFrame}
-                    style={{ backgroundImage: `url(${coverImage})` }}
-                  />
-                ) : (
-                  <div className={styles.imageFallback}>Aucune image enregistrée</div>
-                )}
+                {coverImage
+                  ? <div className={styles.imageFrame} style={{ backgroundImage: `url(${coverImage})` }} />
+                  : <div className={styles.imageFallback}>Aucune image</div>}
               </div>
             </section>
 
+            {/* Métriques rapides */}
             <section className={styles.metricsGrid}>
               <article className={styles.metricCard}>
-                <div className={styles.metricLabel}>Découpage</div>
-                <div className={styles.metricValue}>{propertyRecord.tokenNumber} parts</div>
-                <p className={styles.metricCopy}>
-                  Nombre total de divisions prévues pour cet actif.
-                </p>
+                <div className={styles.metricLabel}>Parts totales</div>
+                <div className={styles.metricValue}>{propertyRecord.tokenNumber}</div>
               </article>
-
               <article className={styles.metricCard}>
-                <div className={styles.metricLabel}>Prix par token</div>
-                <div className={styles.metricValue}>
-                  {formatCurrency(propertyRecord.tokenPrice)}
-                </div>
-                <p className={styles.metricCopy}>
-                  Prix nominal utilisé pour la vente primaire.
-                </p>
+                <div className={styles.metricLabel}>Prix / part</div>
+                <div className={styles.metricValue}>{formatCurrency(propertyRecord.tokenPrice)}</div>
               </article>
-
+              <article className={styles.metricCard}>
+                <div className={styles.metricLabel}>Vendues</div>
+                <div className={styles.metricValue}>{formatTokenUnits(soldRaw.toString(), decimals)} <small>({percentFormatter.format(soldRatio)}%)</small></div>
+              </article>
+              <article className={styles.metricCard}>
+                <div className={styles.metricLabel}>En trésorerie</div>
+                <div className={styles.metricValue}>{formatTokenUnits(onChainSnapshot.treasuryBalance, decimals)}</div>
+              </article>
               <article className={styles.metricCard}>
                 <div className={styles.metricLabel}>Achat client</div>
-                <div
-                  className={
-                    purchaseAvailable ? styles.metricStatePositive : styles.metricStateNegative
-                  }
-                >
-                  {purchaseAvailable ? 'Ouvert à l’achat' : 'Fermé à l’achat'}
+                <div className={purchaseAvailable ? styles.metricStatePositive : styles.metricStateNegative}>
+                  {purchaseAvailable ? 'Ouvert' : 'Fermé'}
                 </div>
-                <p className={styles.metricCopy}>
-                  Status du contract.
-                </p>
-              </article>
-
-              <article className={styles.metricCard}>
-                <div className={styles.metricLabel}>Parts déjà vendues</div>
-                <div className={styles.metricValue}>
-                  {formatTokenUnits(soldRaw.toString(), decimals)}
-                </div>
-                <p className={styles.metricCopy}>
-                  Soit {percentFormatter.format(soldRatio)}% du supply déjà sorti de la trésorerie.
-                </p>
-              </article>
-
-              <article className={styles.metricCard}>
-                <div className={styles.metricLabel}>Parts restantes</div>
-                <div className={styles.metricValue}>
-                  {formatTokenUnits(onChainSnapshot.treasuryBalance, decimals)}
-                </div>
-                <p className={styles.metricCopy}>
-                  Solde encore disponible sur la wallet de trésorerie admin.
-                </p>
-              </article>
-
-              <article className={styles.metricCard}>
-                <div className={styles.metricLabel}>Valeur primaire totale</div>
-                <div className={styles.metricValue}>{formatCurrency(primaryValue)}</div>
-                <p className={styles.metricCopy}>
-                  Valorisation nominale si l’ensemble des parts est placé au prix actuel.
-                </p>
-              </article>
-
-              <article className={styles.metricCard}>
-                <div className={styles.metricLabel}>Supply on-chain</div>
-                <div className={styles.metricValue}>
-                  {formatTokenUnits(onChainSnapshot.totalSupply, decimals)}
-                </div>
-                <p className={styles.metricCopy}>
-                  Montant ERC-20 minté, converti avec {decimals} décimales.
-                </p>
-              </article>
-
-              <article className={styles.metricCard}>
-                <div className={styles.metricLabel}>Revenu moyen / token</div>
-                <div className={styles.metricValue}>À renseigner</div>
-                <p className={styles.metricCopy}>
-                  Ce KPI pourra être alimenté quand le module loyers et rendement sera branché.
-                </p>
               </article>
             </section>
+
+            {/* Stepper 2 étapes */}
+            <div className={styles.stepper}>
+              <div className={`${styles.stepConnector} ${step1Done ? styles.stepConnectorDone : ``}`} />
+            </div>
 
             <section className={styles.contentGrid}>
-              <article className={styles.panel}>
+              {/* Étape 1 : Déploiement */}
+              <article className={`${styles.panel} ${step1Done ? styles.panelDone : ``}`}>
                 <div className={styles.panelHeader}>
                   <div>
-                    <div className={styles.panelEyebrow}>Actions</div>
-                    <h2 className={styles.panelTitle}>Pilotage on-chain</h2>
+                    <div className={styles.panelEyebrow}>Étape 1</div>
+                    <h2 className={styles.panelTitle}>
+                      {step1Done ? '✓ Contrat déployé' : 'Déployer le contrat'}
+                    </h2>
                   </div>
+                  {step1Done && propertyRecord.contractAddress && (
+                    <a
+                      href={buildExplorerAddressUrl(propertyRecord.contractAddress)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={styles.explorerLink}
+                    >
+                      {shortenValue(propertyRecord.contractAddress)} ↗
+                    </a>
+                  )}
                 </div>
 
-                <div className={styles.actionBlock}>
-                  <div className={styles.actionCopy}>
-                    <h3 className={styles.actionTitle}>Financer la wallet backend</h3>
-                    <p className={styles.actionText}>
-                      Avant le déploiement, la wallet administrateur connectée envoie le gas nécessaire vers la wallet backend opérateur.
-                    </p>
-                    <p className={styles.actionText}>
-                      Backend: {backendWalletAddress ? shortenValue(backendWalletAddress) : '—'} |
-                      Solde actuel: {formatNativeBalance(fundingSnapshot?.backendBalanceWei)} |
-                      Manque: {formatNativeBalance(fundingSnapshot?.shortfallWei)}
-                    </p>
-                  </div>
-
-                  <div className={styles.actionButtons}>
-                    <button
-                      type="button"
-                      className={fundingReady ? styles.disabledButton : styles.primaryButton}
-                      onClick={() => void handleFundBackendWallet()}
-                      disabled={loading || fundingReady || !backendWalletAddress}
-                    >
-                      {fundingReady ? 'Backend déjà financée' : 'Financer la wallet backend'}
-                    </button>
-                    {latestFundingTxHash ? (
-                      <a
-                        href={buildExplorerTransactionUrl(latestFundingTxHash)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={styles.secondaryButton}
-                      >
-                        Voir la transaction
-                      </a>
-                    ) : null}
-                  </div>
-
-                  {fundingSnapshot?.error ? (
-                    <div className={styles.inlineWarning}>
-                      Estimation du financement indisponible: {fundingSnapshot.error}
+                {!step1Done && (
+                  <>
+                    {/* Financement wallet backend */}
+                    <div className={styles.actionBlock}>
+                      <div className={styles.actionCopy}>
+                        <h3 className={styles.actionTitle}>
+                          {fundingReady ? '✓ Wallet backend financée' : '1a — Financer la wallet backend'}
+                        </h3>
+                        {!fundingReady && (
+                          <p className={styles.actionText}>
+                            La wallet backend a besoin de gas pour déployer le contrat.
+                            {backendWalletAddress && (
+                              <> Destination : <code>{shortenValue(backendWalletAddress)}</code> — Manque : <strong>{formatNativeBalance(fundingSnapshot?.shortfallWei)}</strong>.</>
+                            )}
+                          </p>
+                        )}
+                        {fundingSnapshot?.error && (
+                          <div className={styles.inlineWarning}>Estimation indisponible : {fundingSnapshot.error}</div>
+                        )}
+                      </div>
+                      {!fundingReady && (
+                        <div className={styles.actionButtons}>
+                          <button
+                            type="button"
+                            className={styles.primaryButton}
+                            onClick={() => void handleFundBackendWallet()}
+                            disabled={loading || !backendWalletAddress}
+                          >
+                            Envoyer le gas →
+                          </button>
+                          {latestFundingTxHash && (
+                            <a
+                              href={buildExplorerTransactionUrl(latestFundingTxHash)}
+                              target="_blank"
+                              rel="noreferrer"
+                              className={styles.secondaryButton}
+                            >
+                              Voir la tx
+                            </a>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  ) : null}
-                </div>
 
-                <div className={styles.actionBlock}>
-                  <div className={styles.actionCopy}>
-                    <h3 className={styles.actionTitle}>Déployer le contrat</h3>
-                  </div>
-                  <button
-                    type="button"
-                    className={
-                      deploymentReady || !fundingReady
-                        ? styles.disabledButton
-                        : styles.primaryButton
-                    }
-                    onClick={() => void handleDeploy()}
-                    disabled={loading || deploymentReady || !fundingReady}
-                  >
-                    {deploymentReady
-                      ? 'Déjà déployé'
-                      : fundingReady
-                        ? 'Déployer'
-                        : 'Financement requis'}
-                  </button>
-                </div>
+                    {/* Déploiement du contrat */}
+                    <div className={styles.actionBlock}>
+                      <div className={styles.actionCopy}>
+                        <h3 className={styles.actionTitle}>1b — Déployer et signer</h3>
+                        <p className={styles.actionText}>
+                          MetaMask vous demandera de signer la transaction EIP-712. Le contrat ERC-20 de ce bien sera créé on-chain.
+                        </p>
+                        {!fundingReady && (
+                          <div className={styles.inlineWarning}>
+                            Financer la wallet backend (étape 1a) avant de déployer.
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        className={fundingReady ? styles.primaryButton : styles.disabledButton}
+                        onClick={() => void handleDeploy()}
+                        disabled={loading || !fundingReady}
+                      >
+                        {loading ? 'Déploiement...' : 'Déployer le contrat'}
+                      </button>
+                    </div>
+                  </>
+                )}
 
-                {!fundingReady ? (
-                  <div className={styles.inlineWarning}>
-                    Connectez la wallet administrateur dans le header puis financez la wallet backend avant le déploiement.
+                {step1Done && (
+                  <div className={styles.detailList}>
+                    <div className={styles.detailItem}>
+                      <span className={styles.detailLabel}>Symbole</span>
+                      <span className={styles.detailValue}>{propertyRecord.symbol ?? '—'}</span>
+                    </div>
+                    <div className={styles.detailItem}>
+                      <span className={styles.detailLabel}>Chain ID</span>
+                      <span className={styles.detailValue}>{propertyRecord.chainId ?? '—'}</span>
+                    </div>
+                    <div className={styles.detailItem}>
+                      <span className={styles.detailLabel}>Tx déploiement</span>
+                      <span className={styles.detailValue}>
+                        {propertyRecord.deployTxHash ? (
+                          <a href={buildExplorerTransactionUrl(propertyRecord.deployTxHash)} target="_blank" rel="noreferrer" className={styles.explorerLink}>
+                            {shortenValue(propertyRecord.deployTxHash)} ↗
+                          </a>
+                        ) : '—'}
+                      </span>
+                    </div>
                   </div>
-                ) : null}
-
-                <div className={styles.actionBlock}>
-                  <div className={styles.actionCopy}>
-                    <h3 className={styles.actionTitle}>Minter l’inventaire</h3>
-                    <p className={styles.actionText}>
-                      Place les parts sur la wallet de trésorerie admin et prépare l’allowance du backend opérateur.
-                    </p>
-                  </div>
-
-                  <div className={styles.mintControls}>
-                    <label className={styles.inputLabel} htmlFor="mint-amount">
-                      Quantité à minter
-                    </label>
-                    <input
-                      id="mint-amount"
-                      className={styles.input}
-                      type="text"
-                      value={mintAmount}
-                      onChange={(event) => setMintAmount(event.target.value)}
-                      placeholder={String(propertyRecord.tokenNumber)}
-                    />
-                    <button
-                      type="button"
-                      className={
-                        !deploymentReady || tokenizedAndActive
-                          ? styles.disabledButton
-                          : styles.primaryButton
-                      }
-                      onClick={() => void handleMint()}
-                      disabled={loading || !deploymentReady || tokenizedAndActive}
-                    >
-                      {tokenizedAndActive ? 'Déjà tokenisé' : 'Minter'}
-                    </button>
-                  </div>
-                </div>
-
-                <div className={styles.actionBlock}>
-                  <div className={styles.actionCopy}>
-                    <h3 className={styles.actionTitle}>Disponibilité achat client</h3>
-                    <p className={styles.actionText}>
-                      Retire temporairement le bien de l’achat sans supprimer le contrat ni les parts déjà mintées.
-                    </p>
-                  </div>
-
-                  <div className={styles.actionButtons}>
-                    <button
-                      type="button"
-                      className={
-                        tokenizedAndActive ? styles.secondaryDangerButton : styles.disabledButton
-                      }
-                      onClick={() => void handlePurchaseAvailabilityChange(false)}
-                      disabled={loading || !tokenizedAndActive}
-                    >
-                      Retirer de l’achat
-                    </button>
-                    <button
-                      type="button"
-                      className={
-                        purchasePaused ? styles.primaryButton : styles.disabledButton
-                      }
-                      onClick={() => void handlePurchaseAvailabilityChange(true)}
-                      disabled={loading || !purchasePaused}
-                    >
-                      Remettre à l’achat
-                    </button>
-                  </div>
-                </div>
-
-                {onChainSnapshot.error ? (
-                  <div className={styles.inlineWarning}>
-                    Lecture on-chain partielle: {onChainSnapshot.error}
-                  </div>
-                ) : null}
+                )}
               </article>
 
-              <article className={styles.panel}>
+              {/* Étape 2 : Mise en vente */}
+              <article className={`${styles.panel} ${!step1Done ? styles.panelLocked : ''} ${step2Done ? styles.panelDone : ''}`}>
                 <div className={styles.panelHeader}>
                   <div>
-                    <div className={styles.panelEyebrow}>Infrastructure</div>
-                    <h2 className={styles.panelTitle}>Données blockchain</h2>
+                    <div className={styles.panelEyebrow}>Étape 2</div>
+                    <h2 className={styles.panelTitle}>
+                      {tokenizedAndActive
+                        ? '✓ Bien en vente'
+                        : purchasePaused
+                          ? 'Vente suspendue'
+                          : 'Mettre en vente'}
+                    </h2>
                   </div>
                 </div>
 
-                <div className={styles.detailList}>
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>Statut DB</span>
-                    <span className={styles.detailValue}>
-                      {getStatusLabel(propertyRecord.tokenizationStatus)}
-                    </span>
-                  </div>
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>Contrat</span>
-                    <div className={styles.valueWithAction}>
-                      <span className={styles.detailValue}>
-                        {shortenValue(propertyRecord.contractAddress)}
-                      </span>
-                      {propertyRecord.contractAddress ? (
-                        <a
-                          href={buildExplorerAddressUrl(propertyRecord.contractAddress)}
-                          target="_blank"
-                          rel="noreferrer"
-                          className={styles.explorerLink}
-                        >
-                          Voir le contrat
-                        </a>
-                      ) : null}
+                {!step1Done && (
+                  <p className={styles.actionText} style={{ color: 'var(--muted)' }}>
+                    Déployez d'abord le contrat (étape 1) pour activer la vente.
+                  </p>
+                )}
+
+                {step1Done && !tokenizedAndActive && !purchasePaused && (
+                  <div className={styles.actionBlock}>
+                    <div className={styles.actionCopy}>
+                      <h3 className={styles.actionTitle}>Minter et activer</h3>
+                      <p className={styles.actionText}>
+                        Crée les {propertyRecord.tokenNumber} parts sur la trésorerie admin et ouvre l'achat aux clients.
+                      </p>
+                    </div>
+                    <div className={styles.mintControls}>
+                      <label className={styles.inputLabel} htmlFor="mint-amount">
+                        Quantité à minter (défaut : {propertyRecord.tokenNumber})
+                      </label>
+                      <input
+                        id="mint-amount"
+                        className={styles.input}
+                        type="text"
+                        value={mintAmount}
+                        onChange={(e) => setMintAmount(e.target.value)}
+                        placeholder={String(propertyRecord.tokenNumber)}
+                      />
+                      <button
+                        type="button"
+                        className={styles.primaryButton}
+                        onClick={() => void handleMint()}
+                        disabled={loading}
+                      >
+                        {loading ? 'Mint en cours...' : 'Lancer la vente →'}
+                      </button>
                     </div>
                   </div>
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>Symbole</span>
-                    <span className={styles.detailValue}>{propertyRecord.symbol ?? '—'}</span>
-                  </div>
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>Chain ID</span>
-                    <span className={styles.detailValue}>
-                      {propertyRecord.chainId ?? '—'}
-                    </span>
-                  </div>
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>Wallet trésorerie</span>
-                    <div className={styles.valueWithAction}>
-                      <span className={styles.detailValue}>
-                        {shortenValue(propertyRecord.treasuryWalletAddress)}
-                      </span>
-                      {propertyRecord.treasuryWalletAddress ? (
-                        <a
-                          href={buildExplorerAddressUrl(propertyRecord.treasuryWalletAddress)}
-                          target="_blank"
-                          rel="noreferrer"
-                          className={styles.explorerLink}
+                )}
+
+                {(tokenizedAndActive || purchasePaused) && (
+                  <div className={styles.actionBlock}>
+                    <div className={styles.actionCopy}>
+                      <h3 className={styles.actionTitle}>
+                        {purchasePaused ? 'Vente actuellement suspendue' : 'Vente ouverte aux clients'}
+                      </h3>
+                      <p className={styles.actionText}>
+                        Vous pouvez suspendre ou reprendre la vente sans affecter les parts déjà vendues ni détruire le contrat.
+                      </p>
+                    </div>
+                    <div className={styles.actionButtons}>
+                      {purchasePaused ? (
+                        <button
+                          type="button"
+                          className={styles.primaryButton}
+                          onClick={() => void handlePurchaseAvailabilityChange(true)}
+                          disabled={loading}
                         >
-                          Voir l’adresse wallet
-                        </a>
-                      ) : null}
+                          Reprendre la vente
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className={styles.secondaryDangerButton}
+                          onClick={() => void handlePurchaseAvailabilityChange(false)}
+                          disabled={loading}
+                        >
+                          Suspendre la vente
+                        </button>
+                      )}
                     </div>
                   </div>
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>Wallet backend</span>
-                    <div className={styles.valueWithAction}>
-                      <span className={styles.detailValue}>
-                        {shortenValue(backendWalletAddress)}
-                      </span>
-                      {backendWalletAddress ? (
-                        <a
-                          href={buildExplorerAddressUrl(backendWalletAddress)}
-                          target="_blank"
-                          rel="noreferrer"
-                          className={styles.explorerLink}
-                        >
-                          Voir l’adresse wallet
-                        </a>
-                      ) : null}
-                    </div>
-                  </div>
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>Solde wallet backend</span>
-                    <span className={styles.detailValue}>
-                      {formatNativeBalance(fundingSnapshot?.backendBalanceWei)}
-                    </span>
-                  </div>
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>Financement déploiement</span>
-                    <span className={styles.detailValue}>
-                      {fundingReady
-                        ? 'Prêt pour le déploiement'
-                        : `Manque ${formatNativeBalance(fundingSnapshot?.shortfallWei)}`}
-                    </span>
-                  </div>
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>Allowance backend</span>
-                    <span className={styles.detailValue}>
-                      {formatTokenUnits(onChainSnapshot.backendAllowance, decimals)}
-                    </span>
-                  </div>
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>Metadata signées</span>
-                    <span className={styles.detailValue}>
-                      {propertyRecord.metadataSignature ? 'Oui' : 'Non'}
-                    </span>
-                  </div>
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>Hash metadata</span>
-                    <span className={styles.detailValue}>
-                      {shortenValue(propertyRecord.metadataHash)}
-                    </span>
-                  </div>
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>Tx de déploiement</span>
-                    <div className={styles.valueWithAction}>
-                      <span className={styles.detailValue}>
-                        {shortenValue(propertyRecord.deployTxHash)}
-                      </span>
-                      {propertyRecord.deployTxHash ? (
-                        <a
-                          href={buildExplorerTransactionUrl(propertyRecord.deployTxHash)}
-                          target="_blank"
-                          rel="noreferrer"
-                          className={styles.explorerLink}
-                        >
-                          Voir la transaction
-                        </a>
-                      ) : null}
-                    </div>
-                  </div>
-                </div>
+                )}
+
+                {onChainSnapshot.error && (
+                  <div className={styles.inlineWarning}>Lecture on-chain partielle : {onChainSnapshot.error}</div>
+                )}
               </article>
             </section>
 
-            <section className={styles.panel}>
-              <div className={styles.panelHeader}>
-                <div>
-                  <div className={styles.panelEyebrow}>Historique</div>
-                  <h2 className={styles.panelTitle}>Dernières opérations blockchain</h2>
+            {/* Historique des opérations */}
+            {latestOperations.length > 0 && (
+              <section className={styles.panel}>
+                <div className={styles.panelHeader}>
+                  <div>
+                    <div className={styles.panelEyebrow}>Historique</div>
+                    <h2 className={styles.panelTitle}>Dernières opérations</h2>
+                  </div>
                 </div>
-              </div>
-
-              {latestOperations.length === 0 ? (
-                <div className={styles.emptyState}>
-                  Aucune opération enregistrée pour ce bien.
-                </div>
-              ) : (
                 <div className={styles.operationList}>
                   {latestOperations.map((operation) => (
                     <article key={operation.id} className={styles.operationCard}>
                       <div className={styles.operationHeader}>
                         <div>
-                          <div className={styles.operationTitle}>
-                            {getOperationLabel(operation.type)}
-                          </div>
-                          <div className={styles.operationDate}>
-                            {formatDate(operation.updatedAt)}
-                          </div>
+                          <div className={styles.operationTitle}>{getOperationLabel(operation.type)}</div>
+                          <div className={styles.operationDate}>{formatDate(operation.updatedAt)}</div>
                         </div>
-                        <span
-                          className={
-                            operation.status === 'CONFIRMED'
-                              ? styles.operationStatusSuccess
-                              : operation.status === 'FAILED'
-                                ? styles.operationStatusError
-                                : styles.operationStatusPending
-                          }
-                        >
+                        <span className={
+                          operation.status === 'CONFIRMED' ? styles.operationStatusSuccess
+                          : operation.status === 'FAILED' ? styles.operationStatusError
+                          : styles.operationStatusPending
+                        }>
                           {operation.status}
                         </span>
                       </div>
-
-                      <div className={styles.operationBody}>
-                        <div className={styles.operationRow}>
-                          <span className={styles.operationLabel}>Request ID</span>
-                          <span className={styles.operationValue}>
-                            {shortenValue(operation.requestId, 10)}
-                          </span>
-                        </div>
-                        <div className={styles.operationRow}>
-                          <span className={styles.operationLabel}>Tx hash</span>
-                          <div className={styles.valueWithAction}>
-                            <span className={styles.operationValue}>
-                              {shortenValue(operation.txHash, 10)}
-                            </span>
-                            {operation.txHash ? (
-                              <a
-                                href={buildExplorerTransactionUrl(operation.txHash)}
-                                target="_blank"
-                                rel="noreferrer"
-                                className={styles.explorerLink}
-                              >
-                                Voir la transaction
+                      {(operation.txHash || operation.errorMessage) && (
+                        <div className={styles.operationBody}>
+                          {operation.txHash && (
+                            <div className={styles.operationRow}>
+                              <span className={styles.operationLabel}>Tx</span>
+                              <a href={buildExplorerTransactionUrl(operation.txHash)} target="_blank" rel="noreferrer" className={styles.explorerLink}>
+                                {shortenValue(operation.txHash, 10)} ↗
                               </a>
-                            ) : null}
-                          </div>
+                            </div>
+                          )}
+                          {operation.errorMessage && (
+                            <div className={styles.operationRow}>
+                              <span className={styles.operationLabel}>Erreur</span>
+                              <span className={styles.operationValue}>{operation.errorMessage}</span>
+                            </div>
+                          )}
                         </div>
-                        <div className={styles.operationRow}>
-                          <span className={styles.operationLabel}>Montant</span>
-                          <span className={styles.operationValue}>
-                            {operation.amount ?? '—'}
-                          </span>
-                        </div>
-                        <div className={styles.operationRow}>
-                          <span className={styles.operationLabel}>Erreur</span>
-                          <span className={styles.operationValue}>
-                            {operation.errorMessage ?? '—'}
-                          </span>
-                        </div>
-                      </div>
+                      )}
                     </article>
                   ))}
                 </div>
-              )}
-            </section>
+              </section>
+            )}
           </>
         ) : null}
       </section>

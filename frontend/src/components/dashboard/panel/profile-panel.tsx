@@ -310,6 +310,41 @@ export default function DashboardProfilePanel({
                     <p>{section.description}</p>
                   </div>
 
+                  {section.key === 'wallet' ? (
+                    <div className={styles.fieldsGrid}>
+                      <div className={styles.fieldFull}>
+                        <span>Wallet liée au compte</span>
+                        <div style={{
+                          padding: '0.75rem 1rem',
+                          borderRadius: '12px',
+                          background: 'rgba(var(--theme-primary-rgb), 0.05)',
+                          border: '1px solid rgba(var(--theme-primary-rgb), 0.12)',
+                          fontFamily: 'monospace',
+                          fontSize: '0.9rem',
+                          color: user.walletAddress ? 'var(--foreground)' : 'var(--muted)',
+                        }}>
+                          {user.walletAddress || 'Aucune wallet liée'}
+                        </div>
+                        <small style={{ color: 'var(--muted)', marginTop: '0.4rem', display: 'block' }}>
+                          Connectez MetaMask depuis la barre en haut — l'adresse est automatiquement sauvegardée.
+                        </small>
+                      </div>
+                      {sectionFields.filter(f => f.key !== 'walletAddress').map((field) => (
+                        <label key={field.key} className={styles.field}>
+                          <span>{field.label}{field.required ? ' *' : ''}</span>
+                          <input
+                            name={field.key}
+                            type={inputTypeFor(field)}
+                            value={formState[field.key] ?? ''}
+                            onChange={handleInputChange}
+                            placeholder={field.placeholder}
+                            required={field.required}
+                          />
+                          {field.helperText ? <small>{field.helperText}</small> : null}
+                        </label>
+                      ))}
+                    </div>
+                  ) : (
                   <div className={styles.fieldsGrid}>
                     {sectionFields.map((field) => {
                       const isFullWidth =
@@ -353,6 +388,7 @@ export default function DashboardProfilePanel({
                       );
                     })}
                   </div>
+                  )}
                 </section>
               );
             })}

@@ -1,0 +1,161 @@
+.monthBar {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.monthField {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.monthField span {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.monthInput {
+  border: 1px solid rgba(var(--theme-primary-rgb), 0.18);
+  border-radius: 10px;
+  padding: 0.5rem 0.65rem;
+  font-size: 0.87rem;
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--foreground);
+  outline: none;
+}
+
+.monthInput:focus {
+  border-color: var(--accent);
+}
+
+.monthSummary {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.monthSummary strong {
+  color: var(--foreground);
+}
+
+.payButton {
+  margin-left: auto;
+  border: none;
+  border-radius: 12px;
+  padding: 0.65rem 1.1rem;
+  background: linear-gradient(135deg, var(--accent), rgba(var(--theme-primary-rgb), 0.82));
+  color: white;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: opacity 180ms;
+  white-space: nowrap;
+}
+
+.payButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  border-radius: 20px;
+  border: 1px solid rgba(var(--theme-primary-rgb), 0.1);
+  box-shadow: var(--shadow-soft);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.87rem;
+}
+
+.table th {
+  padding: 0.85rem 1rem;
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: rgba(var(--theme-surface-rgb), 0.96);
+  border-bottom: 1px solid rgba(var(--theme-primary-rgb), 0.08);
+}
+
+.table td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid rgba(var(--theme-primary-rgb), 0.06);
+  vertical-align: middle;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table tbody tr:hover td {
+  background: rgba(var(--theme-primary-rgb), 0.03);
+}
+
+.statusBadge {
+  display: inline-block;
+  border-radius: 8px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.statusPaid {
+  background: rgba(22, 163, 74, 0.12);
+  color: #16a34a;
+}
+
+.statusProjected {
+  background: rgba(217, 119, 6, 0.12);
+  color: #d97706;
+}
+
+.errorText {
+  color: var(--danger);
+  font-size: 0.78rem;
+}
+
+.monthList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.monthChip {
+  border: 1px solid rgba(var(--theme-primary-rgb), 0.14);
+  border-radius: 999px;
+  padding: 0.4rem 0.8rem;
+  background: transparent;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--foreground);
+  transition: background 120ms, border-color 120ms;
+  white-space: nowrap;
+}
+
+.monthChip:hover {
+  background: rgba(var(--theme-primary-rgb), 0.06);
+}
+
+.monthChipActive {
+  border-color: var(--accent);
+  background: rgba(var(--theme-primary-rgb), 0.1);
+  color: var(--accent);
+}
+
+.monthChipPaid {
+  border-color: rgba(22, 163, 74, 0.4);
+}
