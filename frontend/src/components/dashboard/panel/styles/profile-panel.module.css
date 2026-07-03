@@ -14,6 +14,47 @@
   text-transform: uppercase;
 }
 
+.modifyButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid rgba(var(--theme-primary-rgb), 0.12);
+  border-radius: 16px;
+  padding: 0.85rem 1rem;
+  background: rgba(var(--theme-surface-rgb), 0.82);
+  color: var(--foreground);
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 180ms ease, border-color 180ms ease, background-color 180ms ease;
+}
+
+.modifyButtonClicked {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid rgba(var(--theme-primary-rgb), 0.12);
+  border-radius: 16px;
+  padding: 0.85rem 1rem;
+  background: rgba(var(--theme-surface-rgb), 0.82);
+  color: white;
+  background-color: rgba(var(--theme-primary-rgb), 1);
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 180ms ease, border-color 180ms ease, background-color 180ms ease;
+}
+
+.divHeader {
+  display: flex;
+  justify-content: space-between;
+}
+
+.modifyButton:hover {
+  transform: translateY(-1px);
+  border-color: rgba(var(--theme-primary-rgb), 0.22);
+}
+
 .rolePillAdmin {
   display: inline-flex;
   align-items: center;

@@ -6,6 +6,7 @@ export type Notice = { tone: 'success' | 'error'; message: string } | null;
 export type PanelKey =
   | 'overview'
   | 'opportunities'
+  | 'favorites'
   | 'wallets'
   | 'rents'
   | 'transactions'

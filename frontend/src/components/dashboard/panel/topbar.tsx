@@ -130,7 +130,9 @@ export default function DashboardTopbar({
               : 'Espace client'
             : activePanel === 'opportunities'
               ? 'Catalogue des opportunités'
-              : activeResource?.label ?? 'Panel'}
+              : activePanel === 'favorites'
+                ? 'Favoris'
+                : activeResource?.label ?? 'Panel'}
         </h2>
         <p className={styles.copy}>
           {activePanel === 'overview'
@@ -139,7 +141,9 @@ export default function DashboardTopbar({
               : 'Accès à votre profil, à votre portefeuille et au catalogue d’opportunités disponibles.'
             : activePanel === 'opportunities'
               ? 'Ensemble des actifs actuellement publiés à destination des clients.'
-              : activeResource?.description}
+              : activePanel === 'favorites'
+                ? 'Vos biens enregistrés'
+                : activeResource?.description}
         </p>
       </div>
 

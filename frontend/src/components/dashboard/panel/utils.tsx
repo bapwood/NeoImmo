@@ -3,6 +3,7 @@ import { getResourceConfigsForRole } from '@/src/lib/dashboard-resources';
 import type { PanelUser, UserRole } from '@/src/lib/types';
 import {
   DashboardIcon,
+  HeartIcon,
   PropertyIcon,
   RentIcon,
   TokenIcon,
@@ -167,6 +168,12 @@ export function buildNavigationItems(role: UserRole): NavigationItem[] {
             label: 'Opportunités',
             description: 'Catalogue disponible',
             icon: PropertyIcon,
+          },
+          {
+            key: "favorites" as const,
+            label: "Favoris",
+            description: "Vos biens sauvegardés",
+            icon: HeartIcon,
           },
         ]
       : [];

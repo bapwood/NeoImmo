@@ -9,6 +9,28 @@
   scroll-snap-align: start;
 }
 
+.favoriteButton {
+  position: absolute;
+  margin-top: 13rem;
+  margin-left: 20%;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+  z-index: 2;
+}
+
+.favoriteButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .interactiveCard {
   display: grid;
   gap: 1rem;
@@ -23,7 +45,6 @@
 }
 
 .interactiveCard:hover {
-  transform: translateY(-2px);
   border-color: rgba(var(--theme-primary-rgb), 0.22);
   box-shadow: var(--shadow);
 }

@@ -1,14 +1,14 @@
 services:
   database:
     container_name: postgres
-    image: postgres:alpine
+    image: postgres:16-alpine
     restart: always
     environment:
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     volumes:
-      - pgdata:/var/lib/postgresql
+      - neoimmo_db_data:/var/lib/postgresql/data
     ports:
       - "${DB_PORT}:5432"
     healthcheck:
@@ -108,7 +108,7 @@ services:
         condition: service_healthy
 
 volumes:
-  pgdata:
+  neoimmo_db_data:
   deployments:
 
 networks:
