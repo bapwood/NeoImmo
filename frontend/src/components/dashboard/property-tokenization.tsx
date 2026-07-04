@@ -53,8 +53,8 @@ const percentFormatter = new Intl.NumberFormat('fr-FR', {
   maximumFractionDigits: 2,
 });
 
-function formatCurrency(value: number) {
-  return currencyFormatter.format(value);
+function formatCurrency(cents: number) {
+  return currencyFormatter.format(cents / 100);
 }
 
 function formatDate(value: string | null | undefined) {
@@ -546,7 +546,7 @@ export default function PropertyTokenization({
             {/* Hero */}
             <section className={styles.hero}>
               <div className={styles.heroCopy}>
-                <div className={styles.eyebrow}>Tokenisation de l'actif</div>
+                <div className={styles.eyebrow}>Tokenisation de l&apos;actif</div>
                 <h1 className={styles.title}>{property.name}</h1>
                 <div className={styles.heroMeta}>
                   <span className={styles.metaPill}>{property.localization}</span>
@@ -730,7 +730,7 @@ export default function PropertyTokenization({
 
                 {!step1Done && (
                   <p className={styles.actionText} style={{ color: 'var(--muted)' }}>
-                    Déployez d'abord le contrat (étape 1) pour activer la vente.
+                    Déployez d&apos;abord le contrat (étape 1) pour activer la vente.
                   </p>
                 )}
 
@@ -739,7 +739,7 @@ export default function PropertyTokenization({
                     <div className={styles.actionCopy}>
                       <h3 className={styles.actionTitle}>Minter et activer</h3>
                       <p className={styles.actionText}>
-                        Crée les {propertyRecord.tokenNumber} parts sur la trésorerie admin et ouvre l'achat aux clients.
+                        Crée les {propertyRecord.tokenNumber} parts sur la trésorerie admin et ouvre l&apos;achat aux clients.
                       </p>
                     </div>
                     <div className={styles.mintControls}>

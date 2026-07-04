@@ -196,8 +196,8 @@ function AnimatedCounter({
   return <span ref={ref}>{displayValue}</span>;
 }
 
-function formatCurrency(value: number) {
-  return `${new Intl.NumberFormat("fr-FR").format(value)} €`;
+function formatCurrency(cents: number) {
+  return `${new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(cents / 100)} €`;
 }
 
 function summarizeProperty(property: PropertyRecord) {

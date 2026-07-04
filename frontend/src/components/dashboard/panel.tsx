@@ -48,8 +48,6 @@ import type { Notice, PanelKey, ResourceState } from './panel/types';
 import {
   buildNavigationItems,
   createInitialResourceState,
-  getClientProfileCompletion,
-  getClientProfileCompletionTotal,
   stringifyValue,
 } from './panel/utils';
 import styles from './panel/styles/panel.module.css';
@@ -527,6 +525,16 @@ export default function DashboardPanel({
     router.push(`/actifs/${encodeURIComponent(String(rowId))}/loyers`);
   }
 
+  function handleOpenPropertyStatistics(row: TableRow) {
+    const rowId = row[activeResource?.idKey ?? 'id'];
+
+    if (activeResource?.key !== 'property' || rowId == null) {
+      return;
+    }
+
+    router.push(`/actifs/${encodeURIComponent(String(rowId))}/statistiques`);
+  }
+
   function handleOpenUserManagement(row: TableRow) {
     const rowId = row[activeResource?.idKey ?? 'id'];
 
@@ -680,8 +688,6 @@ export default function DashboardPanel({
     return expiration > Date.now() && expiration - Date.now() <= 86_400_000 * 3;
   }).length;
   const adminCount = users.filter((user) => user.role === 'ADMIN').length;
-  const profileCompletion = getClientProfileCompletion(session?.user);
-  const profileCompletionTotal = getClientProfileCompletionTotal();
   const isClientPortfolioPanel =
     !isAdmin &&
     activePanel !== 'overview' &&
@@ -773,12 +779,11 @@ export default function DashboardPanel({
             onReloadAvailableProperties={() => void reloadAvailableProperties()}
             onReloadResource={(resourceKey) => void reloadResource(resourceKey)}
             onScrollAvailableProperties={scrollAvailableProperties}
-            profileCompletion={profileCompletion}
-            profileCompletionTotal={profileCompletionTotal}
             properties={properties}
             refreshTokens={refreshTokens}
             resourceState={resourceState}
             totalTokenValue={totalTokenValue}
+            user={session.user}
             users={users}
           />
         ) : null}
@@ -857,6 +862,7 @@ export default function DashboardPanel({
             onEditRow={handleEdit}
             onOpenPropertyStatus={handleOpenPropertyStatus}
             onOpenPropertyRent={handleOpenPropertyRent}
+            onOpenPropertyStatistics={handleOpenPropertyStatistics}
             onOpenUserManagement={handleOpenUserManagement}
             onReloadResource={() => void reloadResource(activeResource.key)}
             onToggleUserRestriction={(row) => void handleToggleUserRestriction(row)}

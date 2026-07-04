@@ -19,8 +19,8 @@ type OpportunityCardProps = {
   initialIsFavorite?: boolean; 
 };
 
-function formatCurrency(value: number) {
-  return `${new Intl.NumberFormat('fr-FR').format(value)} €`;
+function formatCurrency(cents: number) {
+  return `${new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(cents / 100)} €`;
 }
 
 export default function OpportunityCard({

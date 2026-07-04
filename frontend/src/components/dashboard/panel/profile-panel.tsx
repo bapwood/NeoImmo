@@ -337,7 +337,7 @@ export default function DashboardProfilePanel({
                           {user.walletAddress || 'Aucune wallet liée'}
                         </div>
                         <small style={{ color: 'var(--muted)', marginTop: '0.4rem', display: 'block' }}>
-                          Connectez MetaMask depuis la barre en haut — l'adresse est automatiquement sauvegardée.
+                          Connectez MetaMask depuis la barre en haut — l&apos;adresse est automatiquement sauvegardée.
                         </small>
                       </div>
                       {sectionFields.filter(f => f.key !== 'walletAddress').map((field) => (

@@ -12,12 +12,12 @@ import {
 import type { AuthSession, PurchaseHistoryRecord } from '@/src/lib/types';
 import styles from './styles/purchase-history-page.module.css';
 
-function formatCurrency(value: number) {
+function formatCurrency(cents: number) {
   return new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency: 'EUR',
     maximumFractionDigits: 0,
-  }).format(value);
+  }).format(cents / 100);
 }
 
 function formatDate(value: string) {

@@ -165,9 +165,14 @@ export default function DashboardTopbar({
         ) : null}
 
         <div className={styles.walletCluster}>
-          <div className={`${styles.walletStatus} ${walletStatusClassName}`}>
+          <button
+            type="button"
+            className={`${styles.walletStatus} ${walletStatusClassName}`}
+            onClick={onOpenWalletSettings}
+            title="Voir la wallet enregistrée sur mon profil"
+          >
             {walletStatusLabel}
-          </div>
+          </button>
           <div className={styles.walletMeta}>
             {account
               ? `${account.slice(0, 6)}...${account.slice(-4)}`

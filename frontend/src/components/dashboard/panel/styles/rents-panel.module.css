@@ -33,6 +33,34 @@
   line-height: 1.7;
 }
 
+.sectionTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+
+.actionBanner {
+  display: grid;
+  gap: 0.3rem;
+  border-radius: 18px;
+  padding: 0.9rem 1.1rem;
+  background: rgba(217, 119, 6, 0.1);
+  border: 1px solid rgba(217, 119, 6, 0.2);
+  color: #92400e;
+}
+
+.actionBanner span {
+  font-size: 0.85rem;
+}
+
+.successBanner {
+  border-radius: 18px;
+  padding: 0.9rem 1.1rem;
+  background: rgba(22, 163, 74, 0.1);
+  color: #16a34a;
+  font-weight: 600;
+}
+
 /* Filters */
 .filters {
   display: flex;

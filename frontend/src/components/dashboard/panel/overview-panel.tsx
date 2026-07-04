@@ -1,14 +1,18 @@
 'use client';
 
+import Link from 'next/link';
 import type { RefObject } from 'react';
+import { resolveAssetUrl } from '@/src/lib/api';
 import type { ResourceConfig, ResourceKey } from '@/src/lib/dashboard-resources';
 import type {
   ClientPortfolio,
+  PanelUser,
   PropertyRecord,
   RefreshTokenRecord,
   UserRecord,
 } from '@/src/lib/types';
 import OpportunityCard from '../opportunity-card';
+import RevenueForecastChart from './revenue-forecast-chart';
 import { formatCurrency } from './utils';
 import type { PanelKey, ResourceState } from './types';
 import styles from './styles/overview-panel.module.css';
@@ -27,12 +31,11 @@ type DashboardOverviewPanelProps = {
   onReloadAvailableProperties: () => void;
   onReloadResource: (resourceKey: ResourceKey) => void;
   onScrollAvailableProperties: (direction: 'previous' | 'next') => void;
-  profileCompletion: number;
-  profileCompletionTotal: number;
   properties: PropertyRecord[];
   refreshTokens: RefreshTokenRecord[];
   resourceState: ResourceState;
   totalTokenValue: number;
+  user: PanelUser;
   users: UserRecord[];
 };
 
@@ -50,15 +53,16 @@ export default function DashboardOverviewPanel({
   onReloadAvailableProperties,
   onReloadResource,
   onScrollAvailableProperties,
-  profileCompletion,
-  profileCompletionTotal,
   properties,
   refreshTokens,
   resourceState,
   totalTokenValue,
+  user,
   users,
 }: DashboardOverviewPanelProps) {
   const portfolioSummary = clientPortfolio?.summary;
+  const walletVerified = user.walletStatus === 'VERIFIED';
+  const positions = clientPortfolio?.positions ?? [];
 
   return (
     <div className={styles.stack}>
@@ -95,72 +99,149 @@ export default function DashboardOverviewPanel({
           ) : (
             <>
               <article className={styles.heroCard}>
-                <span>Profil</span>
-                <strong>
-                  {profileCompletion}/{profileCompletionTotal}
-                </strong>
-                <p>Informations clés actuellement renseignées.</p>
-              </article>
-              <article className={styles.heroCard}>
-                <span>Investi</span>
-                <strong>{formatCurrency(portfolioSummary?.totalInvested ?? 0)}</strong>
+                <span>Valeur du portefeuille</span>
+                <strong>{formatCurrency(portfolioSummary?.currentValuation ?? 0)}</strong>
                 <p>{portfolioSummary?.positionsCount ?? 0} position(s) actuellement détenue(s).</p>
               </article>
               <article className={styles.heroCard}>
-                <span>Revenus</span>
+                <span>Revenu mensuel projeté</span>
                 <strong>{formatCurrency(portfolioSummary?.projectedMonthlyIncome ?? 0)}</strong>
-                <p>Projection mensuelle actuelle de votre portefeuille.</p>
+                <p>Projection locative actuelle de votre portefeuille.</p>
               </article>
               <article className={styles.heroCard}>
-                <span>Opportunités</span>
-                <strong>{availableProperties.length}</strong>
-                <p>Actif(s) publiés et visibles dans le catalogue.</p>
+                <span>Rendement annuel projeté</span>
+                <strong>{portfolioSummary?.projectedAnnualYieldPercent ?? 0}%</strong>
+                <p>Estimation basée sur vos positions actuelles.</p>
               </article>
             </>
           )}
         </div>
       </section>
 
-      <section className={styles.quickGrid}>
-        {availableResources.map((resource) => {
-          const state = resourceState[resource.key];
+      {isAdmin ? (
+        <section className={styles.quickGrid}>
+          {availableResources.map((resource) => {
+            const state = resourceState[resource.key];
 
-          return (
-            <article key={resource.key} className={styles.quickCard}>
-              <div className={styles.quickCardTop}>
-                <div>
-                  <div className={styles.eyebrow}>Périmètre</div>
-                  <h3 className={styles.sectionTitle}>{resource.label}</h3>
+            return (
+              <article key={resource.key} className={styles.quickCard}>
+                <div className={styles.quickCardTop}>
+                  <div>
+                    <div className={styles.eyebrow}>Périmètre</div>
+                    <h3 className={styles.sectionTitle}>{resource.label}</h3>
+                  </div>
+                  <span
+                    className={styles.quickBadge}
+                    style={{ backgroundColor: resource.accentSoft, color: resource.accent }}
+                  >
+                    {state.items.length}
+                  </span>
                 </div>
-                <span
-                  className={styles.quickBadge}
-                  style={{ backgroundColor: resource.accentSoft, color: resource.accent }}
-                >
-                  {state.items.length}
-                </span>
+                <p className={styles.sectionCopy}>{resource.description}</p>
+                <div className={styles.quickActions}>
+                  <button
+                    type="button"
+                    className={styles.primaryButton}
+                    onClick={() => onPanelChange(resource.key)}
+                  >
+                    Accéder
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.secondaryButton}
+                    onClick={() => onReloadResource(resource.key)}
+                  >
+                    Actualiser
+                  </button>
+                </div>
+                {state.error ? <div className={styles.inlineError}>{state.error}</div> : null}
+              </article>
+            );
+          })}
+        </section>
+      ) : (
+        <>
+          {!user.walletAddress || !walletVerified ? (
+            <section className={styles.accountBanner}>
+              <div>
+                <strong>
+                  {!user.walletAddress
+                    ? 'Wallet non connectée'
+                    : 'KYC en attente de validation'}
+                </strong>
+                <p>
+                  {!user.walletAddress
+                    ? 'Connectez votre wallet MetaMask depuis la barre du haut pour pouvoir investir.'
+                    : 'Votre KYC doit être validé par un administrateur avant de pouvoir acheter des parts.'}
+                </p>
               </div>
-              <p className={styles.sectionCopy}>{resource.description}</p>
-              <div className={styles.quickActions}>
-                <button
-                  type="button"
-                  className={styles.primaryButton}
-                  onClick={() => onPanelChange(resource.key)}
-                >
-                  Accéder
-                </button>
-                <button
-                  type="button"
-                  className={styles.secondaryButton}
-                  onClick={() => onReloadResource(resource.key)}
-                >
-                  Actualiser
-                </button>
+              <button
+                type="button"
+                className={styles.primaryButton}
+                onClick={() => onPanelChange('user')}
+              >
+                Compléter mon profil
+              </button>
+            </section>
+          ) : null}
+
+          <section className={styles.panelCard}>
+            <div className={styles.panelCardHeader}>
+              <div>
+                <div className={styles.eyebrow}>Portefeuille</div>
+                <h3 className={styles.sectionTitle}>Vos positions</h3>
               </div>
-              {state.error ? <div className={styles.inlineError}>{state.error}</div> : null}
-            </article>
-          );
-        })}
-      </section>
+              <button
+                type="button"
+                className={styles.secondaryButton}
+                onClick={() => onPanelChange('property')}
+              >
+                Voir tout
+              </button>
+            </div>
+
+            {positions.length === 0 ? (
+              <div className={styles.emptyState}>
+                Aucun actif détenu pour le moment. Explorez les opportunités pour
+                investir dans votre premier bien.
+              </div>
+            ) : (
+              <div className={styles.positionPreviewList}>
+                {positions.slice(0, 3).map((position) => {
+                  const coverImage = resolveAssetUrl(position.property.images[0]);
+
+                  return (
+                    <Link
+                      key={position.id}
+                      href={`/opportunites/${position.property.id}`}
+                      className={styles.positionPreviewCard}
+                    >
+                      <div
+                        className={
+                          coverImage
+                            ? styles.positionPreviewMedia
+                            : styles.positionPreviewMediaPlaceholder
+                        }
+                        style={coverImage ? { backgroundImage: `url(${coverImage})` } : undefined}
+                      />
+                      <div className={styles.positionPreviewBody}>
+                        <strong>{position.property.name}</strong>
+                        <span>
+                          {position.tokenAmount} parts · {formatCurrency(position.currentValuation)}
+                        </span>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+          {positions.length > 0 ? (
+            <RevenueForecastChart revenueSeries={clientPortfolio?.revenueSeries ?? []} />
+          ) : null}
+        </>
+      )}
 
       {!isAdmin ? (
         <section className={styles.catalogSection}>

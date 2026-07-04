@@ -16,6 +16,7 @@ type DashboardResourcePanelProps = {
   onEditRow: (row: TableRow) => void;
   onOpenPropertyStatus: (row: TableRow) => void;
   onOpenPropertyRent: (row: TableRow) => void;
+  onOpenPropertyStatistics: (row: TableRow) => void;
   onOpenUserManagement: (row: TableRow) => void;
   onReloadResource: () => void;
   onToggleUserRestriction: (row: TableRow) => void;
@@ -31,6 +32,7 @@ export default function DashboardResourcePanel({
   onEditRow,
   onOpenPropertyStatus,
   onOpenPropertyRent,
+  onOpenPropertyStatistics,
   onOpenUserManagement,
   onReloadResource,
   onToggleUserRestriction,
@@ -178,6 +180,15 @@ export default function DashboardResourcePanel({
                               onClick={() => onOpenPropertyRent(row)}
                             >
                               Loyers
+                            </button>
+                          ) : null}
+                          {activeResource.key === 'property' ? (
+                            <button
+                              type="button"
+                              className={styles.tableButton}
+                              onClick={() => onOpenPropertyStatistics(row)}
+                            >
+                              Statistiques
                             </button>
                           ) : null}
                           {activeResource.key === 'user' ? (

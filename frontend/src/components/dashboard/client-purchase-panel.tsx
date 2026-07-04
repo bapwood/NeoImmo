@@ -45,8 +45,8 @@ const eip712Domain = [
   { name: 'verifyingContract', type: 'address' },
 ] as const;
 
-function formatCurrency(value: number) {
-  return currencyFormatter.format(value);
+function formatCurrency(cents: number) {
+  return currencyFormatter.format(cents / 100);
 }
 
 export default function ClientPurchasePanel({

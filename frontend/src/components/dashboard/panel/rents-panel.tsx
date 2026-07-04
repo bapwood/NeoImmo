@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ApiError, requestJson } from '@/src/lib/api';
 import { buildExplorerTransactionUrl } from '@/src/lib/explorer';
@@ -103,15 +103,61 @@ export default function RentsPanel({ session, properties }: Props) {
     void load();
   }, [load]);
 
+  const propertyGroups = useMemo(() => {
+    if (!data) return [];
+
+    const groups = new Map<
+      number,
+      {
+        propertyId: number;
+        propertyName: string;
+        total: number;
+        paid: number;
+        recipients: number;
+        recipientsPaid: number;
+      }
+    >();
+
+    for (const record of data.records) {
+      const group = groups.get(record.property.id) ?? {
+        propertyId: record.property.id,
+        propertyName: record.property.name,
+        total: 0,
+        paid: 0,
+        recipients: 0,
+        recipientsPaid: 0,
+      };
+
+      group.total += record.amount;
+      group.recipients += 1;
+
+      if (record.status === 'PAID') {
+        group.paid += record.amount;
+        group.recipientsPaid += 1;
+      }
+
+      groups.set(record.property.id, group);
+    }
+
+    return [...groups.values()].sort((left, right) => {
+      const leftRemaining = left.total - left.paid;
+      const rightRemaining = right.total - right.paid;
+      return rightRemaining - leftRemaining;
+    });
+  }, [data]);
+
+  const propertiesWithOutstanding = propertyGroups.filter((group) => group.paid < group.total);
+
   return (
     <div className={styles.stack}>
       <div className={styles.header}>
         <div>
           <div className={styles.eyebrow}>Administration</div>
-          <h2 className={styles.title}>{"Loyers — vue d'ensemble"}</h2>
+          <h2 className={styles.title}>{"Loyers — que reste-t-il à payer ?"}</h2>
           <p className={styles.subtitle}>
-            Les loyers sont versés en cryptomonnaie, bien par bien, proportionnellement aux parts détenues par chaque client.
-            Ouvrez un bien pour déclencher les versements réels.
+            Loyers versés en cryptomonnaie, proportionnellement aux parts détenues par chaque client.
+            Le tableau ci-dessous regroupe le reste à verser bien par bien pour le mois sélectionné —
+            ouvrez un bien pour déclencher le versement réel.
           </p>
         </div>
         <button type="button" className={styles.secondaryButton} onClick={() => void load()}>
@@ -188,7 +234,82 @@ export default function RentsPanel({ session, properties }: Props) {
             </div>
           </section>
 
+          {propertiesWithOutstanding.length > 0 ? (
+            <div className={styles.actionBanner}>
+              <strong>
+                {propertiesWithOutstanding.length} bien(s) ont des loyers en attente pour {monthFilter}.
+              </strong>
+              <span>Consultez la liste ci-dessous et ouvrez chaque bien pour déclencher le versement.</span>
+            </div>
+          ) : propertyGroups.length > 0 ? (
+            <div className={styles.successBanner}>
+              Tous les loyers de la sélection actuelle sont versés. Aucune action requise.
+            </div>
+          ) : null}
+
           <section>
+            <div className={styles.sectionTitle}>Ce qu&apos;il reste à payer, bien par bien</div>
+            {propertyGroups.length === 0 ? (
+              <div className={styles.empty}>Aucun loyer pour ces filtres.</div>
+            ) : (
+              <div className={styles.tableWrapper}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>Bien</th>
+                      <th>Total projeté</th>
+                      <th>Versé</th>
+                      <th>Reste à verser</th>
+                      <th>Bénéficiaires</th>
+                      <th>Statut</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {propertyGroups.map((group) => {
+                      const remaining = group.total - group.paid;
+                      const fullyPaid = remaining <= 0;
+
+                      return (
+                        <tr key={group.propertyId}>
+                          <td>{group.propertyName}</td>
+                          <td>{formatEur(group.total)}</td>
+                          <td>{formatEur(group.paid)}</td>
+                          <td className={remaining > 0 ? styles.warning : styles.positive}>
+                            {formatEur(remaining)}
+                          </td>
+                          <td>
+                            {group.recipientsPaid}/{group.recipients}
+                          </td>
+                          <td>
+                            <span
+                              className={`${styles.statusBadge} ${
+                                fullyPaid ? styles.statusPaid : styles.statusProjected
+                              }`}
+                            >
+                              {fullyPaid ? 'Complet' : 'En attente'}
+                            </span>
+                          </td>
+                          <td>
+                            <button
+                              type="button"
+                              className={styles.toggleButton}
+                              onClick={() => router.push(`/actifs/${group.propertyId}/loyers`)}
+                            >
+                              {fullyPaid ? 'Voir' : 'Verser maintenant'} →
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+
+          <section>
+            <div className={styles.sectionTitle}>Détail par client</div>
             {data.records.length === 0 ? (
               <div className={styles.empty}>Aucun versement de loyer pour ces filtres.</div>
             ) : (

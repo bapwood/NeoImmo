@@ -15,9 +15,10 @@ declare global {
   }
 }
 
-const localChainIdHex = '0x7a69';
-const localChainRpcUrl = 'http://127.0.0.1:8545';
-const localChainName = 'NeoImmo Local';
+const targetChainId = Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? '31337');
+const targetChainIdHex = `0x${targetChainId.toString(16)}`;
+const targetChainRpcUrl = process.env.NEXT_PUBLIC_CHAIN_RPC_URL ?? 'http://127.0.0.1:8545';
+const targetChainName = process.env.NEXT_PUBLIC_CHAIN_NAME ?? 'NeoImmo Local';
 
 function getProvider() {
   if (typeof window === 'undefined' || !window.ethereum) {
@@ -69,7 +70,7 @@ export async function ensureSupportedChain() {
   try {
     await provider.request({
       method: 'wallet_switchEthereumChain',
-      params: [{ chainId: localChainIdHex }],
+      params: [{ chainId: targetChainIdHex }],
     });
     return;
   } catch {
@@ -77,14 +78,14 @@ export async function ensureSupportedChain() {
       method: 'wallet_addEthereumChain',
       params: [
         {
-          chainId: localChainIdHex,
-          chainName: localChainName,
+          chainId: targetChainIdHex,
+          chainName: targetChainName,
           nativeCurrency: {
             name: 'Ether',
             symbol: 'ETH',
             decimals: 18,
           },
-          rpcUrls: [localChainRpcUrl],
+          rpcUrls: [targetChainRpcUrl],
         },
       ],
     });

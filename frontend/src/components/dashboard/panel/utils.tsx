@@ -33,8 +33,8 @@ export function stringifyValue(value: unknown) {
   return String(value);
 }
 
-export function formatCurrency(value: number) {
-  return `${new Intl.NumberFormat('fr-FR').format(value)} €`;
+export function formatCurrency(cents: number) {
+  return `${new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(cents / 100)} €`;
 }
 
 export function formatDate(value: string) {

@@ -24,8 +24,8 @@ const currencyFormatter = new Intl.NumberFormat('fr-FR', {
   maximumFractionDigits: 0,
 });
 
-function formatCurrency(value: number) {
-  return currencyFormatter.format(value);
+function formatCurrency(cents: number) {
+  return currencyFormatter.format(cents / 100);
 }
 
 function formatDate(value: string | null | undefined) {

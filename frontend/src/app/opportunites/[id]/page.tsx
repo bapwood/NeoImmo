@@ -15,8 +15,8 @@ import type { AuthSession, PropertyRecord } from '@/src/lib/types';
 import ClientPurchasePanel from '@/src/components/dashboard/client-purchase-panel';
 import styles from './styles/page.module.css';
 
-function formatCurrency(value: number) {
-  return `${new Intl.NumberFormat('fr-FR').format(value)} €`;
+function formatCurrency(cents: number) {
+  return `${new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(cents / 100)} €`;
 }
 
 function GalleryArrowIcon({ direction }: { direction: 'left' | 'right' }) {
@@ -383,7 +383,7 @@ export default function OpportunityDetailPage() {
             </div>
             <div>
               <span>Statut achat</span>
-              <strong>{openForPurchase ? 'Ouvert aux clients' : 'Retiré de l’achat'}</strong>
+              <strong>{openForPurchase ? 'Ouvert' : 'Retiré de l’achat'}</strong>
             </div>
           </div>
 
