@@ -25,6 +25,11 @@ Prérequis :
     depuis le dernier run de ce script, les biens déjà en base pointent vers
     des contrats qui n'existent plus (erreur "could not decode result data").
     Dans ce cas, vider la base d'abord avec `python3 vide_db.py --yes`.
+  - Le port du backend (BACKEND_URL) dépend de SERVER_PORT dans le `.env` de la
+    stack ciblée : 3000 en local par défaut, mais souvent différent sur un
+    serveur distant (ex: 3001 sur le VPS de prod) — vérifier avec
+    `cat .env | grep SERVER_PORT` avant de lancer, sinon le script échoue en
+    "Connection refused".
 
 Usage:
   BACKEND_URL=http://localhost:3000 ADMIN_EMAIL=admin@neoimmo.local ADMIN_PASSWORD=admin python3 test_bien_db.py
@@ -190,7 +195,19 @@ class Session:
         self.refresh()
 
     def refresh(self):
-        resp = requests.post(f"{BACKEND_URL}/auth/login", json={"email": EMAIL, "password": PASSWORD})
+        try:
+            resp = requests.post(f"{BACKEND_URL}/auth/login", json={"email": EMAIL, "password": PASSWORD}, timeout=15)
+        except requests.exceptions.ConnectionError as exc:
+            print(f"Impossible de joindre {BACKEND_URL} : {exc}")
+            print(
+                "Vérifie que le backend tourne bien à cette adresse et sur ce port "
+                "(BACKEND_URL, par défaut http://localhost:3000). Le port du backend "
+                "est défini par SERVER_PORT dans le .env de la stack Docker cible : "
+                "3000 en local par défaut, mais peut être différent sur un serveur "
+                "distant (ex: 3001) — vérifie avec `cat .env | grep SERVER_PORT` et "
+                "relance avec BACKEND_URL=http://localhost:<SERVER_PORT> python3 test_bien_db.py"
+            )
+            sys.exit(1)
         if resp.status_code != 200:
             print(f"Échec login ({resp.status_code}): {resp.text}")
             sys.exit(1)
