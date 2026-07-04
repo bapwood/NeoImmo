@@ -16,7 +16,15 @@ générées une fois puis codées EN DUR ci-dessous : relancer le script plusieu
 fois de suite réutilise toujours les mêmes adresses (utile pour retrouver les
 mêmes comptes/wallets d'un test à l'autre sans reconfigurer MetaMask).
 
-Dépendances : pip install requests eth-account
+Dépendances : pip install -r requirements.txt (depuis la racine du repo)
+
+Prérequis :
+  - Stack Docker complète démarrée (`docker compose up -d --build`), y compris
+    `chain` (Anvil) et `server` (backend) — pas seulement `database`.
+  - Anvil ne persiste PAS son état : si le conteneur `chain` a été recréé
+    depuis le dernier run de ce script, les biens déjà en base pointent vers
+    des contrats qui n'existent plus (erreur "could not decode result data").
+    Dans ce cas, vider la base d'abord avec `python3 vide_db.py --yes`.
 
 Usage:
   BACKEND_URL=http://localhost:3000 ADMIN_EMAIL=admin@neoimmo.local ADMIN_PASSWORD=admin python3 test_bien_db.py

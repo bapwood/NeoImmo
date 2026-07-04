@@ -11,7 +11,7 @@ identifiants repartent à 1), puis un compte admin est recréé :
 Utilise `docker exec` vers le conteneur postgres du docker-compose du projet
 (pas de connexion réseau directe requise).
 
-Dépendances : pip install bcrypt
+Dépendances : pip install -r requirements.txt (depuis la racine du repo)
 
 Usage:
   python3 vide_db.py
