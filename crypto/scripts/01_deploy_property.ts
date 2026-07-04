@@ -19,7 +19,7 @@ async function main() {
 
   const chain = await ethers.provider.getNetwork();
   const manifest = {
-    network: "localhost",
+    network: network.name,
     chainId: Number(chain.chainId),
     deployedAt: new Date().toISOString(),
     backendOperator: {

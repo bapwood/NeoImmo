@@ -16,7 +16,7 @@ async function main() {
   await transferGate.waitForDeployment();
 
   const manifest = {
-    network: "localhost",
+    network: network.name,
     chainId: Number(chain.chainId),
     deployedAt: new Date().toISOString(),
     backendOperator: {

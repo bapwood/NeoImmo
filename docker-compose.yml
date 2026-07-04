@@ -82,6 +82,7 @@ services:
       RPC_LOCALHOST: "http://chain:8545"
       BLOCKCHAIN_ENABLED: "true"
       BLOCKCHAIN_RPC_URL: "http://chain:8545"
+      BLOCKCHAIN_METADATA_BASE_URL: "http://localhost:${SERVER_PORT}"
       BLOCKCHAIN_MNEMONIC: "top proof city smart unable drink order festival flush desert umbrella social"
       BLOCKCHAIN_BACKEND_ACCOUNT_INDEX: "0"
       BLOCKCHAIN_TREASURY_ACCOUNT_INDEX: "1"

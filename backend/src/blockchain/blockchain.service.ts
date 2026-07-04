@@ -2636,7 +2636,7 @@ export class BlockchainService {
   private getMetadataBaseUrl() {
     return (
       this.configService.get<string>('BLOCKCHAIN_METADATA_BASE_URL')?.trim() ||
-      `http://localhost:${this.configService.get<string>('PORT') ?? '3001'}`
+      `http://localhost:${this.configService.get<string>('SERVER_PORT') ?? '3000'}`
     );
   }
 
