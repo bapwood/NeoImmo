@@ -53,7 +53,7 @@ export function resolveAssetUrl(assetPath: string | null | undefined) {
   }
 
   if (assetPath.startsWith('/')) {
-    return `/api/${assetPath}`;
+    return `/api${assetPath}`;
   }
 
   return assetPath;
@@ -76,7 +76,9 @@ export async function requestJson<T>(
     headers.set('Authorization', `Bearer ${session.accessToken}`);
   }
 
-  const response = await fetch(`/api/${endpoint}`, {
+  const normalizedEndpoint = endpoint.replace(/^\/+/, '');
+
+  const response = await fetch(`/api/${normalizedEndpoint}`, {
     ...init,
     headers,
     cache: 'no-store',
