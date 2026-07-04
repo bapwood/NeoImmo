@@ -456,6 +456,27 @@ export class BlockchainController {
     return this.blockchainService.getPropertyRentManagement(id);
   }
 
+  @Get('properties/:id/statistics')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary: 'Read the full projection statistics of a property',
+    description:
+      'Returns investor count, invested/current value, projected annual yield and the full paid/projected monthly revenue history for the admin property statistics page.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Property identifier',
+    example: 12,
+  })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiForbiddenResponse({ description: 'Forbidden' })
+  @ApiNotFoundResponse({ description: 'Property not found' })
+  getPropertyStatistics(@Param('id', ParseIntPipe) id: number) {
+    return this.blockchainService.getPropertyStatistics(id);
+  }
+
   @Get('properties/:id/rent-management/:month')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)

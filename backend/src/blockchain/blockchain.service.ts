@@ -1403,6 +1403,119 @@ export class BlockchainService {
     };
   }
 
+  async getPropertyStatistics(propertyId: number) {
+    const property = await this.getPropertyForBlockchain(propertyId);
+    const decimals = property.tokenDecimals ?? 18;
+
+    let tokensSold: string | null = null;
+    let totalSupply: string | null = null;
+    let onChainError: string | null = null;
+
+    if (this.isBlockchainEnabled() && property.contractAddress) {
+      try {
+        const tokenContract = new Contract(
+          property.contractAddress,
+          PROPERTY_SHARES_ABI,
+          this.getProvider(),
+        );
+        const treasuryAddress =
+          property.treasuryWalletAddress ?? this.getTreasuryWallet().address;
+        const [totalSupplyRaw, treasuryBalanceRaw] = await Promise.all([
+          tokenContract.totalSupply(),
+          tokenContract.balanceOf(treasuryAddress),
+        ]);
+        const soldRaw = totalSupplyRaw - treasuryBalanceRaw;
+        tokensSold = formatUnits(soldRaw, decimals);
+        totalSupply = formatUnits(totalSupplyRaw, decimals);
+      } catch (error) {
+        onChainError =
+          error instanceof Error ? error.message : 'Lecture on-chain impossible.';
+      }
+    }
+
+    const positions = await this.prisma.portfolioPosition.findMany({
+      where: { propertyId },
+    });
+
+    const investorsCount = positions.length;
+    const totalInvested = positions.reduce((sum, position) => sum + position.investedTotal, 0);
+    const totalProjectedMonthlyIncome = positions.reduce(
+      (sum, position) => sum + position.projectedMonthlyIncome,
+      0,
+    );
+    const totalCurrentValuation = positions.reduce((sum, position) => {
+      const tokenAmount = Number(position.tokenAmount);
+      return sum + Math.round((Number.isFinite(tokenAmount) ? tokenAmount : 0) * property.tokenPrice);
+    }, 0);
+    const projectedAnnualYieldPercent =
+      totalInvested > 0
+        ? Number((((totalProjectedMonthlyIncome * 12) / totalInvested) * 100).toFixed(2))
+        : 0;
+
+    const revenueRows = await this.prisma.portfolioRevenue.findMany({
+      where: { propertyId },
+      orderBy: [{ month: 'asc' }],
+    });
+
+    const monthBuckets = new Map<string, { month: string; paid: number; projected: number }>();
+
+    for (const row of revenueRows) {
+      const key = row.month.toISOString();
+      const bucket = monthBuckets.get(key) ?? { month: key, paid: 0, projected: 0 };
+
+      if (row.status === 'PAID') {
+        bucket.paid += row.amount;
+      } else {
+        bucket.projected += row.amount;
+      }
+
+      monthBuckets.set(key, bucket);
+    }
+
+    const months = [...monthBuckets.values()]
+      .sort((left, right) => left.month.localeCompare(right.month))
+      .map((bucket) => ({
+        month: bucket.month,
+        label: this.formatRentMonthLabel(new Date(bucket.month)),
+        paid: bucket.paid,
+        projected: bucket.projected,
+        total: bucket.paid + bucket.projected,
+      }));
+
+    const totalPaidToDate = months.reduce((sum, month) => sum + month.paid, 0);
+    const totalProjectedRemaining = months.reduce((sum, month) => sum + month.projected, 0);
+
+    return {
+      property: {
+        id: property.id,
+        name: property.name,
+        localization: property.localization,
+        contractAddress: property.contractAddress,
+        tokenNumber: property.tokenNumber,
+        tokenPrice: property.tokenPrice,
+        tokenDecimals: decimals,
+        tokenizationStatus: property.tokenizationStatus,
+      },
+      onChain: {
+        tokensSold,
+        totalSupply,
+        onChainError,
+      },
+      investors: {
+        count: investorsCount,
+        totalInvested,
+        totalCurrentValuation,
+      },
+      income: {
+        totalProjectedMonthly: totalProjectedMonthlyIncome,
+        projectedAnnualYieldPercent,
+        totalPaidToDate,
+        totalProjectedRemaining,
+      },
+      months,
+    };
+  }
+
   async getPropertyRentMonthDetail(propertyId: number, month: string) {
     await this.getPropertyForBlockchain(propertyId);
 

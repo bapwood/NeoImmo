@@ -169,37 +169,74 @@ PHOTO_POOL = [
 ]
 
 
-def login():
-    resp = requests.post(f"{BACKEND_URL}/auth/login", json={"email": EMAIL, "password": PASSWORD})
-    if resp.status_code != 200:
-        print(f"Échec login ({resp.status_code}): {resp.text}")
-        sys.exit(1)
-    token = resp.json().get('accessToken')
-    if not token:
-        print('Access token introuvable dans la réponse de login')
-        sys.exit(1)
-    return token
+class Session:
+    """Holds the admin JWT and transparently re-logs in when it expires.
+
+    A Sepolia run can take well over an hour (real ~12s block times), long
+    enough to outlive the 1h access token, so every call must be able to
+    refresh and retry rather than crash the whole run.
+    """
+
+    def __init__(self):
+        self._token = None
+        self.refresh()
+
+    def refresh(self):
+        resp = requests.post(f"{BACKEND_URL}/auth/login", json={"email": EMAIL, "password": PASSWORD})
+        if resp.status_code != 200:
+            print(f"Échec login ({resp.status_code}): {resp.text}")
+            sys.exit(1)
+        token = resp.json().get('accessToken')
+        if not token:
+            print('Access token introuvable dans la réponse de login')
+            sys.exit(1)
+        self._token = token
+
+    def headers(self):
+        return {"Authorization": f"Bearer {self._token}", "Content-Type": "application/json"}
 
 
-def auth_headers(token):
-    return {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+def request_json(method, session, path, payload=None, ok_statuses=(200, 201), max_retries=3):
+    # Sepolia calls that wait on tx confirmation (deploy/mint/execute/kyc-sync)
+    # can legitimately take well over a minute under network congestion, so a
+    # short client timeout would otherwise misread a slow-but-successful call
+    # as failed and needlessly retry a non-idempotent endpoint.
+    url = f"{BACKEND_URL}{path}"
+    last_error = None
 
+    for attempt in range(max_retries):
+        try:
+            resp = requests.request(method, url, json=payload, headers=session.headers(), timeout=180)
 
-def request_json(method, token, path, payload=None, ok_statuses=(200, 201)):
-    resp = requests.request(method, f"{BACKEND_URL}{path}", json=payload, headers=auth_headers(token))
-    if resp.status_code not in ok_statuses:
-        raise RuntimeError(f"{method} {path} -> {resp.status_code}: {resp.text}")
-    if resp.status_code == 204 or not resp.text:
-        return None
-    return resp.json()
+            if resp.status_code == 401:
+                session.refresh()
+                resp = requests.request(method, url, json=payload, headers=session.headers(), timeout=180)
+        except requests.RequestException as error:
+            last_error = error
+            time.sleep(2 * (attempt + 1))
+            continue
+
+        if resp.status_code >= 500:
+            last_error = RuntimeError(f"{method} {path} -> {resp.status_code}: {resp.text}")
+            time.sleep(2 * (attempt + 1))
+            continue
+
+        if resp.status_code not in ok_statuses:
+            raise RuntimeError(f"{method} {path} -> {resp.status_code}: {resp.text}")
+
+        if resp.status_code == 204 or not resp.text:
+            return None
+        return resp.json()
+
+    raise RuntimeError(f"{method} {path} a échoué après {max_retries} tentatives : {last_error}")
 
 
 # ---------------------------------------------------------------------------
 # Utilisateurs clients (profil complet + wallet fixe + KYC vérifié)
 # ---------------------------------------------------------------------------
 
-def upsert_client(token, spec):
-    existing_users = request_json("GET", token, "/user")
+def upsert_client(session, spec):
+    existing_users = request_json("GET", session, "/user")
     existing = next((u for u in existing_users if u["email"] == spec["email"]), None)
 
     profile_payload = {
@@ -225,17 +262,17 @@ def upsert_client(token, spec):
     }
 
     if existing:
-        user = request_json("PUT", token, f"/user/{existing['id']}", profile_payload)
+        user = request_json("PUT", session, f"/user/{existing['id']}", profile_payload)
         print(f"  - {spec['email']}: profil mis à jour (id={user['id']})")
     else:
         create_payload = dict(profile_payload)
         create_payload["password"] = spec["password"]
         create_payload["role"] = "CLIENT"
-        user = request_json("POST", token, "/user", create_payload)
+        user = request_json("POST", session, "/user", create_payload)
         print(f"  - {spec['email']}: créé (id={user['id']})")
 
     if user.get("walletStatus") != "VERIFIED" or not user.get("kycSyncedAt"):
-        request_json("POST", token, f"/crypto/users/{user['id']}/kyc/sync", {})
+        request_json("POST", session, f"/crypto/users/{user['id']}/kyc/sync", {})
         print(f"    KYC synchronisé on-chain pour {spec['email']} (FR, vérifié).")
     else:
         print(f"    KYC déjà vérifié pour {spec['email']}.")
@@ -273,13 +310,13 @@ def sample_property(i):
     }
 
 
-def upsert_property(token, payload):
-    manageable = request_json("GET", token, "/property/manage")
+def upsert_property(session, payload):
+    manageable = request_json("GET", session, "/property/manage")
     existing = next((p for p in manageable if p["name"] == payload["name"]), None)
     if existing:
         print(f"  - {payload['name']}: déjà présent (id={existing['id']})")
         return existing
-    created = request_json("POST", token, "/property", payload)
+    created = request_json("POST", session, "/property", payload)
     print(f"  - {payload['name']}: créé (id={created['id']})")
     return created
 
@@ -299,38 +336,42 @@ def sign_typed(private_key, prepared):
     return signature_hex if signature_hex.startswith("0x") else f"0x{signature_hex}"
 
 
-def ensure_deployed_and_active(token, property_id, property_name):
-    state = request_json("GET", token, f"/crypto/properties/{property_id}/state")
+def ensure_deployed_and_active(session, property_id, property_name):
+    state = request_json("GET", session, f"/crypto/properties/{property_id}/state")
     status = state["property"]["tokenizationStatus"]
 
     if status == "DRAFT":
         prepared = request_json(
-            "POST", token, f"/crypto/properties/{property_id}/deploy/prepare",
+            "POST", session, f"/crypto/properties/{property_id}/deploy/prepare",
             {"adminWalletAddress": ADMIN_DEPLOY_WALLET["address"], "deadlineMinutes": 30},
         )
         signature = sign_typed(ADMIN_DEPLOY_WALLET["private_key"], prepared)
-        request_json(
-            "POST", token, f"/crypto/properties/{property_id}/deploy/execute",
-            {"requestId": prepared["requestId"], "signature": signature},
-        )
+        try:
+            request_json(
+                "POST", session, f"/crypto/properties/{property_id}/deploy/execute",
+                {"requestId": prepared["requestId"], "signature": signature},
+            )
+        except RuntimeError as error:
+            if "deja ete executee" not in str(error):
+                raise
         print(f"    {property_name}: déployé on-chain.")
         status = "DEPLOYED"
 
     if status == "DEPLOYED":
-        request_json("POST", token, f"/crypto/properties/{property_id}/mint", {})
+        request_json("POST", session, f"/crypto/properties/{property_id}/mint", {})
         print(f"    {property_name}: inventaire minté, bien actif.")
         status = "ACTIVE"
 
     if status == "PAUSED":
-        request_json("POST", token, f"/crypto/properties/{property_id}/purchase-availability", {"available": True})
+        request_json("POST", session, f"/crypto/properties/{property_id}/purchase-availability", {"available": True})
         status = "ACTIVE"
 
     return status == "ACTIVE"
 
 
-def buy_shares(token, property_id, property_token_price, user, amount):
+def buy_shares(session, property_id, property_token_price, user, amount):
     prepared = request_json(
-        "POST", token, "/crypto/marketplace/prepare-buy",
+        "POST", session, "/crypto/marketplace/prepare-buy",
         {
             "propertyId": property_id,
             "userId": user["id"],
@@ -341,18 +382,26 @@ def buy_shares(token, property_id, property_token_price, user, amount):
         },
     )
     signature = sign_typed(user["privateKey"], prepared)
-    request_json(
-        "POST", token, "/crypto/marketplace/execute",
-        {"requestId": prepared["requestId"], "signature": signature},
-    )
+    try:
+        request_json(
+            "POST", session, "/crypto/marketplace/execute",
+            {"requestId": prepared["requestId"], "signature": signature},
+        )
+    except RuntimeError as error:
+        # A client-side timeout on a slow Sepolia confirmation can make a call
+        # that actually succeeded server-side look like it failed when we
+        # retry it: the retry then correctly reports "already executed".
+        # That means the purchase went through, so this isn't a real error.
+        if "deja ete executee" not in str(error):
+            raise
 
 
-def pay_current_month_rent(token, property_id):
+def pay_current_month_rent(session, property_id):
     from datetime import datetime, timezone
     month_start = datetime.now(timezone.utc).replace(day=1).strftime("%Y-%m-%d")
     try:
         result = request_json(
-            "POST", token, f"/crypto/properties/{property_id}/rent-management/pay",
+            "POST", session, f"/crypto/properties/{property_id}/rent-management/pay",
             {"month": month_start},
         )
         return result
@@ -363,13 +412,13 @@ def pay_current_month_rent(token, property_id):
 
 def main():
     print(f"Connexion à {BACKEND_URL} avec {EMAIL}")
-    token = login()
+    session = Session()
     print("Login OK, token obtenu.\n")
 
     print("=== Clients (profil complet, wallet fixe, KYC vérifié FR) ===")
     clients = []
     for spec in CLIENTS:
-        user = upsert_client(token, spec)
+        user = upsert_client(session, spec)
         user["privateKey"] = spec["privateKey"]
         clients.append(user)
         time.sleep(0.1)
@@ -378,7 +427,7 @@ def main():
     properties = []
     for i in range(1, 11):
         payload = sample_property(i)
-        prop = upsert_property(token, payload)
+        prop = upsert_property(session, payload)
         properties.append(prop)
         time.sleep(0.1)
 
@@ -386,7 +435,7 @@ def main():
     active_properties = []
     for prop in properties:
         try:
-            if ensure_deployed_and_active(token, prop["id"], prop["name"]):
+            if ensure_deployed_and_active(session, prop["id"], prop["name"]):
                 active_properties.append(prop)
         except RuntimeError as error:
             print(f"  ERREUR déploiement {prop['name']}: {error}")
@@ -395,7 +444,7 @@ def main():
     print("\n=== Association de parts aux clients (achats primaires) ===")
     purchases = 0
     for prop in active_properties:
-        state = request_json("GET", token, f"/crypto/properties/{prop['id']}/state")
+        state = request_json("GET", session, f"/crypto/properties/{prop['id']}/state")
         token_price = state["property"]["tokenPrice"]
         token_number = state["property"]["tokenNumber"]
         buyers = random.sample(clients, k=random.randint(2, min(4, len(clients))))
@@ -403,7 +452,7 @@ def main():
         for client in buyers:
             amount = max(1, round(token_number * random.uniform(0.01, 0.05)))
             try:
-                buy_shares(token, prop["id"], token_price, client, amount)
+                buy_shares(session, prop["id"], token_price, client, amount)
                 print(f"  - {client['email']} achète {amount} parts de {prop['name']}")
                 purchases += 1
             except RuntimeError as error:
@@ -412,7 +461,7 @@ def main():
 
     print("\n=== Versement de loyer du mois courant (transactions RENT_PAYOUT) ===")
     for prop in active_properties:
-        result = pay_current_month_rent(token, prop["id"])
+        result = pay_current_month_rent(session, prop["id"])
         if result:
             print(f"  - {prop['name']}: {result['paid']} versement(s), {result['failed']} échec(s), {result['skipped']} ignoré(s)")
         time.sleep(0.2)
