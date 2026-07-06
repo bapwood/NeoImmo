@@ -95,9 +95,7 @@
 }
 
 .mediaPlaceholder {
-  background:
-    radial-gradient(circle at top left, rgba(var(--theme-secondary-rgb), 0.62), transparent 34%),
-    linear-gradient(150deg, rgba(var(--theme-primary-rgb), 0.18), rgba(var(--theme-primary-rgb), 0.05));
+  background: var(--panel);
 }
 
 .body {

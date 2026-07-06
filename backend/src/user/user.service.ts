@@ -153,7 +153,10 @@ export class UserService {
     }
   }
 
-  async setUserRestriction(id: number, restricted: boolean): Promise<PublicUser> {
+  async setUserRestriction(
+    id: number,
+    restricted: boolean,
+  ): Promise<PublicUser> {
     const user = await this.getUserEntityById(id);
 
     if (!user) {
@@ -167,7 +170,9 @@ export class UserService {
     }
 
     if (user.role === 'ADMIN') {
-      throw new BadRequestException('Les comptes administrateur ne peuvent pas être restreints.');
+      throw new BadRequestException(
+        'Les comptes administrateur ne peuvent pas être restreints.',
+      );
     }
 
     const updatedUser = await this.prisma.user.update({
@@ -214,7 +219,9 @@ export class UserService {
     };
   }
 
-  private async buildUpdatePayload(data: UpdateUserDto): Promise<Prisma.UserUpdateInput> {
+  private async buildUpdatePayload(
+    data: UpdateUserDto,
+  ): Promise<Prisma.UserUpdateInput> {
     const payload: Prisma.UserUpdateInput = {
       ...this.extractProfileFields(data),
     };
@@ -239,7 +246,9 @@ export class UserService {
       const normalizedWalletAddress = data.walletAddress.trim();
       payload.walletAddress = normalizedWalletAddress;
       payload.walletStatus =
-        normalizedWalletAddress === '' ? WalletStatus.UNSET : WalletStatus.PENDING;
+        normalizedWalletAddress === ''
+          ? WalletStatus.UNSET
+          : WalletStatus.PENDING;
       payload.walletVerifiedAt = null;
 
       if (normalizedWalletAddress === '') {
@@ -258,7 +267,9 @@ export class UserService {
     ) {
       const targets = Array.isArray(error.meta?.target)
         ? error.meta.target
-        : [error.meta?.target].filter((value): value is string => typeof value === 'string');
+        : [error.meta?.target].filter(
+            (value): value is string => typeof value === 'string',
+          );
 
       if (targets.includes('walletAddress')) {
         throw new BadRequestException('Wallet address already in use');

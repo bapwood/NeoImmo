@@ -185,9 +185,6 @@ export default function WalletPanel({ session }: Props) {
         <div>
           <div className={styles.eyebrow}>Administration</div>
           <h2 className={styles.title}>Trésorerie & Loyers</h2>
-          <p className={styles.subtitle}>
-            Soldes des wallets système, inventaire des tokens et suivi des loyers du mois.
-          </p>
         </div>
         <button type="button" className={styles.secondaryButton} onClick={() => void load()}>
           Actualiser

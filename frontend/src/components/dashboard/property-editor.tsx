@@ -52,6 +52,10 @@ function normalizeFieldValue(field: FieldConfig, rawValue: string) {
   const trimmedValue = rawValue.trim();
 
   if (field.kind === 'number') {
+    if (trimmedValue === '') {
+      return field.required ? 0 : undefined;
+    }
+
     return Number(trimmedValue);
   }
 
@@ -60,6 +64,10 @@ function normalizeFieldValue(field: FieldConfig, rawValue: string) {
       .split(/\r?\n|,/)
       .map((entry) => entry.trim())
       .filter(Boolean);
+  }
+
+  if (trimmedValue === '' && !field.required) {
+    return undefined;
   }
 
   return trimmedValue;
@@ -72,6 +80,24 @@ function buildPayload(formState: FormState) {
       normalizeFieldValue(field, formState[field.key] ?? ''),
     ]),
   );
+}
+
+function groupFieldsBySection(fields: FieldConfig[]) {
+  const order: string[] = [];
+  const bySection = new Map<string, FieldConfig[]>();
+
+  fields.forEach((field) => {
+    const section = field.section ?? 'Général';
+
+    if (!bySection.has(section)) {
+      bySection.set(section, []);
+      order.push(section);
+    }
+
+    bySection.get(section)!.push(field);
+  });
+
+  return order.map((section) => ({ section, fields: bySection.get(section)! }));
 }
 
 function parseNumberValue(value: string | undefined, fallback: number) {
@@ -93,6 +119,7 @@ export default function PropertyEditor({
   const router = useRouter();
   const [session, setSession] = useState<AuthSession | null>(null);
   const [formState, setFormState] = useState<FormState>(() => buildEmptyForm());
+  const [computedScore, setComputedScore] = useState<number | null>(null);
   const [loading, setLoading] = useState(mode === 'edit');
   const [saving, setSaving] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
@@ -138,6 +165,7 @@ export default function PropertyEditor({
         }
 
         setFormState(propertyToFormState(property));
+        setComputedScore(property.score);
       } catch (error) {
         if (cancelled) {
           return;
@@ -304,7 +332,7 @@ export default function PropertyEditor({
     name: formState.name?.trim() || 'Nom du bien',
     localization: formState.localization?.trim() || 'Localisation à compléter',
     livingArea: formState.livingArea?.trim() || 'Surface à compléter',
-    score: parseNumberValue(formState.score, 0),
+    score: computedScore ?? 0,
     description:
       formState.description?.trim() ||
       'La description client apparaîtra ici dès que vous aurez renseigné le contenu du bien.',
@@ -350,6 +378,12 @@ export default function PropertyEditor({
                 du bien dans l’interface.
               </p>
             </div>
+            <div className={styles.eyebrow}>
+              Score de rentabilité :{' '}
+              {mode === 'edit' && computedScore != null
+                ? `${computedScore}/100`
+                : 'calculé automatiquement à l’enregistrement, à partir des variables de rentabilité'}
+            </div>
           </div>
 
           {notice ? (
@@ -374,7 +408,11 @@ export default function PropertyEditor({
             <div className={styles.emptyState}>Chargement du bien...</div>
           ) : (
             <form onSubmit={handleSubmit} className={styles.formGrid}>
-              {propertyFields.map((field) => {
+              {groupFieldsBySection(propertyFields).map(({ section, fields }) => (
+              <div key={section} className={styles.fieldFull}>
+                <h4 className={styles.sectionCopy} style={{ margin: '1.25rem 0 0.5rem' }}>{section}</h4>
+                <div className={styles.formGrid}>
+              {fields.map((field) => {
                 if (field.key === 'images') {
                   return (
                     <div key={field.key} className={styles.fieldFull}>
@@ -495,6 +533,9 @@ export default function PropertyEditor({
                   </label>
                 );
               })}
+                </div>
+              </div>
+              ))}
 
               <div className={styles.formActions}>
                 <button type="submit" className={styles.primaryButton} disabled={saving}>

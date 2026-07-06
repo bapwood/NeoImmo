@@ -127,4 +127,22 @@ export class PortfolioController {
   listAdminRevenues(@Query() query: AdminRevenueQueryDto) {
     return this.portfolioService.listAdminRevenues(query);
   }
+
+  @Get('admin/rent-calendar')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary: 'Read upcoming rent due dates across every property',
+    description:
+      'Returns, month by month over the requested horizon, the total rent due and the per-property breakdown (amount, recipients, paid/partial/projected status) — used by the admin overview payout calendar.',
+  })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiForbiddenResponse({ description: 'Forbidden' })
+  getAdminRentCalendar(@Query('monthsAhead') monthsAhead?: string) {
+    const parsed = Number(monthsAhead);
+    return this.portfolioService.getAdminRentCalendar(
+      Number.isFinite(parsed) && parsed > 0 ? parsed : undefined,
+    );
+  }
 }

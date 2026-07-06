@@ -26,14 +26,20 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get('me')
-  @ApiResponse({ status: 200, description: 'Current authenticated user fetched' })
+  @ApiResponse({
+    status: 200,
+    description: 'Current authenticated user fetched',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   getMe(@Req() request: AuthenticatedRequest) {
     return this.userService.getUserById(request.user.userId);
   }
 
   @Put('me')
-  @ApiResponse({ status: 200, description: 'Current authenticated user updated' })
+  @ApiResponse({
+    status: 200,
+    description: 'Current authenticated user updated',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   updateMe(
     @Req() request: AuthenticatedRequest,
@@ -87,7 +93,10 @@ export class UserController {
 
   @Post(':id/restriction')
   @Roles(Role.ADMIN)
-  @ApiResponse({ status: 200, description: 'The user restriction has been updated' })
+  @ApiResponse({
+    status: 200,
+    description: 'The user restriction has been updated',
+  })
   @ApiResponse({ status: 400, description: 'Admins cannot be restricted' })
   @ApiResponse({ status: 404, description: 'User not found' })
   setUserRestriction(

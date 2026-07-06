@@ -107,7 +107,7 @@
   border: none;
   border-radius: 12px;
   padding: 0.65rem 1.1rem;
-  background: linear-gradient(135deg, var(--accent), rgba(var(--theme-primary-rgb), 0.82));
+  background: var(--accent);
   color: white;
   font-weight: 600;
   font-size: 0.85rem;

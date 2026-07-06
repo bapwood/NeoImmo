@@ -113,6 +113,46 @@ model Property {
   bathroomNumber Int
   tokenNumber    Int
   tokenPrice     Int
+
+  // --- Acquisition ---
+  purchasePrice        Int?
+  notaryFeesPct        Float?
+  agencyFeesPct        Float?
+  diagnosticFees       Int?
+  renovationCost       Int?
+  furnitureCost        Int?
+
+  // --- Financement ---
+  platformEquity       Int?
+  loanAmount           Int?
+  loanRatePct          Float?
+  loanDurationYears    Int?
+
+  // --- Revenus locatifs ---
+  monthlyRent          Int?
+  occupancyRatePct     Float?
+  rentType             String?
+
+  // --- Charges d'exploitation ---
+  nonRecoverableCharges     Int?
+  propertyTax               Int?
+  insurancePnoAnnual        Int?
+  insuranceGliPct           Float?
+  managementFeePct          Float?
+  maintenanceProvisionPct   Float?
+  majorRepairsProvisionPct  Float?
+
+  // --- Frais plateforme ---
+  subscriptionFeePct            Float?
+  platformAnnualFeePct          Float?
+  exitFeePct                    Float?
+  rentDistributionCommissionPct Float?
+
+  // --- Sortie / revente ---
+  holdingPeriodYears   Int?
+  exitAppreciationPct  Float?
+  resaleFeesPct        Float?
+
   symbol         String?
   contractAddress String?   @unique
   chainId        Int?
@@ -130,6 +170,7 @@ model Property {
   blockchainOperations BlockchainOperation[]
   portfolioPositions PortfolioPosition[]
   portfolioRevenues PortfolioRevenue[]
+  rentStatements RentStatement[]
   favoritedBy User[] @relation("UserFavorites")
   preRegisteredBy    User[] @relation("UserPreRegistrations")
 }
@@ -207,4 +248,27 @@ model PortfolioRevenue {
   @@unique([positionId, month])
   @@index([userId, month])
   @@index([propertyId, month])
+}
+
+model RentStatement {
+  id                     Int      @id @default(autoincrement())
+  propertyId             Int
+  month                  DateTime
+  rentCollected          Int
+  occupancyRatePct       Float
+  nonRecoverableCharges  Int      @default(0)
+  propertyTaxMonthly     Int      @default(0)
+  insuranceCosts         Int      @default(0)
+  managementFee          Int      @default(0)
+  maintenanceCost        Int      @default(0)
+  blockchainFees         Int      @default(0)
+  platformFee            Int      @default(0)
+  netDistributable       Int
+  notes                  String?
+  createdById            Int?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  property               Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([propertyId, month])
 }

@@ -98,9 +98,6 @@ export default function PurchaseHistoryPage() {
           <div>
             <div className={styles.eyebrow}>Portefeuille client</div>
             <h1 className={styles.title}>Historique d’achat</h1>
-            <p className={styles.copy}>
-              Suivez chaque souscription confirmée, le montant investi, le contrat associé et la wallet destinataire.
-            </p>
           </div>
 
           <div className={styles.headerActions}>

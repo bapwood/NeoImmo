@@ -68,7 +68,7 @@
   width: 48px;
   height: 48px;
   border-radius: 18px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+  background: var(--accent);
   text-decoration: none;
   box-shadow: var(--shadow-soft);
 }
@@ -340,7 +340,7 @@
   border: none;
   border-radius: 16px;
   padding: 0.95rem 1.2rem;
-  background: linear-gradient(135deg, var(--accent), rgba(var(--theme-primary-rgb), 0.82));
+  background: var(--accent);
   color: white;
   font-weight: 600;
   cursor: pointer;

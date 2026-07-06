@@ -53,6 +53,27 @@ export type UserRecord = {
   restrictedAt?: string | null;
 };
 
+export type PropertyFinancials = {
+  totalAcquisitionCost: number;
+  amountRaised: number;
+  suggestedTokenPrice: number | null;
+  grossAnnualRent: number;
+  operatingExpenses: number;
+  netOperatingIncome: number;
+  annualDebtService: number;
+  distributableCashFlow: number;
+  perTokenMonthlyIncome: number;
+  perTokenAnnualIncome: number;
+  grossYieldPct: number | null;
+  netYieldPct: number | null;
+  cashOnCashPct: number | null;
+  investorAnnualYieldBps: number | null;
+  exitValue: number | null;
+  netExitProceedsPerToken: number | null;
+  moic: number | null;
+  paybackYears: number | null;
+};
+
 export type PropertyRecord = {
   id: number;
   name: string;
@@ -66,6 +87,34 @@ export type PropertyRecord = {
   bathroomNumber: number;
   tokenNumber: number;
   tokenPrice: number;
+  purchasePrice?: number | null;
+  notaryFeesPct?: number | null;
+  agencyFeesPct?: number | null;
+  diagnosticFees?: number | null;
+  renovationCost?: number | null;
+  furnitureCost?: number | null;
+  platformEquity?: number | null;
+  loanAmount?: number | null;
+  loanRatePct?: number | null;
+  loanDurationYears?: number | null;
+  monthlyRent?: number | null;
+  occupancyRatePct?: number | null;
+  rentType?: string | null;
+  nonRecoverableCharges?: number | null;
+  propertyTax?: number | null;
+  insurancePnoAnnual?: number | null;
+  insuranceGliPct?: number | null;
+  managementFeePct?: number | null;
+  maintenanceProvisionPct?: number | null;
+  majorRepairsProvisionPct?: number | null;
+  subscriptionFeePct?: number | null;
+  platformAnnualFeePct?: number | null;
+  exitFeePct?: number | null;
+  rentDistributionCommissionPct?: number | null;
+  holdingPeriodYears?: number | null;
+  exitAppreciationPct?: number | null;
+  resaleFeesPct?: number | null;
+  financials?: PropertyFinancials | null;
   symbol?: string | null;
   contractAddress?: string | null;
   chainId?: number | null;
@@ -269,6 +318,38 @@ export type PortfolioRevenueBucket = {
   paid: number;
   projected: number;
   total: number;
+};
+
+export type RentCalendarPropertyDue = {
+  propertyId: number;
+  propertyName: string;
+  amount: number;
+  recipientsCount: number;
+  status: 'PROJECTED' | 'PARTIAL' | 'PAID';
+};
+
+export type RentCalendarMonth = {
+  month: string;
+  label: string;
+  totalProjected: number;
+  totalPaid: number;
+  properties: RentCalendarPropertyDue[];
+};
+
+export type RentCalendarResponse = {
+  months: RentCalendarMonth[];
+};
+
+export type TokenSalesMonth = {
+  month: string;
+  label: string;
+  tokensSold: number;
+  amountRaised: number;
+  salesCount: number;
+};
+
+export type TokenSalesSeriesResponse = {
+  months: TokenSalesMonth[];
 };
 
 export type PortfolioNextRevenue = {

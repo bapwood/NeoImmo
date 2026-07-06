@@ -52,6 +52,7 @@ import { PayPropertyRentDto } from './dto/pay-property-rent.dto';
 import { PreparePropertyDeployDto } from './dto/prepare-property-deploy.dto';
 import { PreparePrimaryBuyDto } from './dto/prepare-primary-buy.dto';
 import { PrepareClientPrimaryBuyDto } from './dto/prepare-client-primary-buy.dto';
+import { RentStatementDto } from './dto/rent-statement.dto';
 import { SetBlockedCountryDto } from './dto/set-blocked-country.dto';
 import { SetBlocklistDto } from './dto/set-blocklist.dto';
 import { SetPropertyPurchaseAvailabilityDto } from './dto/set-property-purchase-availability.dto';
@@ -77,6 +78,25 @@ export class BlockchainController {
   @ApiForbiddenResponse({ description: 'Forbidden' })
   getSystemOverview() {
     return this.blockchainService.getSystemOverview();
+  }
+
+  @Get('system/sales-series')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary: 'Monthly token sales trend across every property',
+    description:
+      'Returns, for each of the last N months, the number of tokens sold, the amount raised and the number of confirmed primary buy transactions — used by the admin overview sales chart.',
+  })
+  @ApiOkResponse({ description: 'Monthly token sales series' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiForbiddenResponse({ description: 'Forbidden' })
+  getTokenSalesSeries(@Query('monthsBack') monthsBack?: string) {
+    const parsed = Number(monthsBack);
+    return this.blockchainService.getTokenSalesSeries(
+      Number.isFinite(parsed) && parsed > 0 ? parsed : undefined,
+    );
   }
 
   @Get('health')
@@ -507,6 +527,67 @@ export class BlockchainController {
     return this.blockchainService.getPropertyRentMonthDetail(id, month);
   }
 
+  @Get('properties/:id/rent-management/:month/statement')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary:
+      'Read the monthly rent statement (fiche de versement) of a property',
+    description:
+      'Returns the actual monthly variables (rent collected, occupancy, charges, blockchain fees...) previously entered by the admin for this month, or null if none exists yet.',
+  })
+  @ApiParam({ name: 'id', description: 'Property identifier', example: 12 })
+  @ApiParam({
+    name: 'month',
+    description: 'Any ISO date within the target month',
+    example: '2026-07-01',
+  })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiForbiddenResponse({ description: 'Forbidden' })
+  @ApiNotFoundResponse({ description: 'Property not found' })
+  getRentStatement(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('month') month: string,
+  ) {
+    return this.blockchainService.getRentStatement(id, month);
+  }
+
+  @Post('properties/:id/rent-management/:month/statement')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary:
+      'Save the monthly rent statement (fiche de versement) of a property',
+    description:
+      'Records the real operational figures for the month (rent collected, occupancy, non-recoverable charges, property tax, insurance, management fee, maintenance, blockchain fees, platform fee) and recomputes the distributable amount for every current share holder, replacing the static projection for that month.',
+  })
+  @ApiParam({ name: 'id', description: 'Property identifier', example: 12 })
+  @ApiParam({
+    name: 'month',
+    description: 'Any ISO date within the target month',
+    example: '2026-07-01',
+  })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiForbiddenResponse({ description: 'Forbidden' })
+  @ApiConflictResponse({ description: 'Month already (partially) paid' })
+  @ApiNotFoundResponse({ description: 'Property not found' })
+  upsertRentStatement(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('month') month: string,
+    @Body() payload: RentStatementDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.blockchainService.upsertRentStatement(
+      id,
+      month,
+      payload,
+      request.user.userId,
+    );
+  }
+
   @Post('properties/:id/rent-management/pay')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -525,7 +606,9 @@ export class BlockchainController {
   })
   @ApiUnauthorizedResponse({ description: 'Unauthorized' })
   @ApiForbiddenResponse({ description: 'Forbidden' })
-  @ApiBadRequestResponse({ description: 'Property not deployed' })
+  @ApiBadRequestResponse({
+    description: 'Property not deployed, or statement missing',
+  })
   @ApiNotFoundResponse({ description: 'Property not found' })
   payPropertyRent(
     @Param('id', ParseIntPipe) id: number,

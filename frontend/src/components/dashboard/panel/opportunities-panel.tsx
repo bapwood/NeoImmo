@@ -21,10 +21,6 @@ export default function DashboardOpportunitiesPanel({
         <div>
           <div className={styles.eyebrow}>Catalogue client</div>
           <h3 className={styles.title}>Ensemble des opportunités disponibles</h3>
-          <p className={styles.copy}>
-            Accédez à l’ensemble des actifs actuellement publiés et
-            consultez chaque fiche pour approfondir votre lecture.
-          </p>
         </div>
       </div>
 

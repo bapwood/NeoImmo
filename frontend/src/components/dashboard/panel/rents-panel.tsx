@@ -153,12 +153,8 @@ export default function RentsPanel({ session, properties }: Props) {
       <div className={styles.header}>
         <div>
           <div className={styles.eyebrow}>Administration</div>
-          <h2 className={styles.title}>{"Loyers — que reste-t-il à payer ?"}</h2>
-          <p className={styles.subtitle}>
-            Loyers versés en cryptomonnaie, proportionnellement aux parts détenues par chaque client.
-            Le tableau ci-dessous regroupe le reste à verser bien par bien pour le mois sélectionné —
-            ouvrez un bien pour déclencher le versement réel.
-          </p>
+          <h2 className={styles.title}>{"Loyers"}</h2>
+          <p className={styles.subtitle}></p>
         </div>
         <button type="button" className={styles.secondaryButton} onClick={() => void load()}>
           Actualiser
@@ -296,7 +292,7 @@ export default function RentsPanel({ session, properties }: Props) {
                               className={styles.toggleButton}
                               onClick={() => router.push(`/actifs/${group.propertyId}/loyers`)}
                             >
-                              {fullyPaid ? 'Voir' : 'Verser maintenant'} →
+                              {fullyPaid ? 'Voir' : 'Verser maintenant'}
                             </button>
                           </td>
                         </tr>
@@ -365,7 +361,7 @@ export default function RentsPanel({ session, properties }: Props) {
                             className={styles.toggleButton}
                             onClick={() => router.push(`/actifs/${record.property.id}/loyers`)}
                           >
-                            Gérer ce bien →
+                            Gérer ce bien
                           </button>
                         </td>
                       </tr>

@@ -43,9 +43,7 @@ export class PropertyController {
   )
   @ApiResponse({ status: 200, description: 'Property images uploaded' })
   @ApiResponse({ status: 400, description: 'Invalid upload payload' })
-  uploadImages(
-    @UploadedFiles() files?: Array<{ filename: string }>,
-  ) {
+  uploadImages(@UploadedFiles() files?: Array<{ filename: string }>) {
     if (!files || files.length === 0) {
       throw new BadRequestException('Aucune image reçue.');
     }
@@ -68,7 +66,10 @@ export class PropertyController {
   }
 
   @Get()
-  @ApiResponse({ status: 200, description: 'All the properties have been fetched' })
+  @ApiResponse({
+    status: 200,
+    description: 'All the properties have been fetched',
+  })
   @ApiResponse({ status: 404, description: 'No properties in the database' })
   findAll() {
     return this.propertyService.findPublished();
@@ -99,7 +100,10 @@ export class PropertyController {
 
   @Get('manage/:id')
   @UseGuards(JwtAuthGuard)
-  @ApiResponse({ status: 200, description: 'The property has been fetched for management' })
+  @ApiResponse({
+    status: 200,
+    description: 'The property has been fetched for management',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Could not find the property' })
@@ -127,7 +131,11 @@ export class PropertyController {
     @Body() createPropertyDto: CreatePropertyDto,
     @Req() request: AuthenticatedRequest,
   ) {
-    return this.propertyService.update(Number(id), createPropertyDto, request.user);
+    return this.propertyService.update(
+      Number(id),
+      createPropertyDto,
+      request.user,
+    );
   }
 
   @Delete(':id')

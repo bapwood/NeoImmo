@@ -1,6 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Role, User } from '@prisma/client';
-import { IsEmail, IsEnum, IsOptional, IsString, Matches } from 'class-validator';
+import {
+  IsEmail,
+  IsEnum,
+  IsOptional,
+  IsString,
+  Matches,
+} from 'class-validator';
 
 class UserBaseDto {
   @ApiProperty({
@@ -139,7 +145,8 @@ class UserBaseDto {
   investmentObjective?: string;
 
   @ApiPropertyOptional({
-    description: 'The ISO 3166-1 alpha-2 country code used for on-chain compliance',
+    description:
+      'The ISO 3166-1 alpha-2 country code used for on-chain compliance',
     example: 'FR',
   })
   @IsString()
@@ -329,7 +336,8 @@ export class UpdateUserDto {
   investmentObjective?: string;
 
   @ApiPropertyOptional({
-    description: 'The ISO 3166-1 alpha-2 country code used for on-chain compliance',
+    description:
+      'The ISO 3166-1 alpha-2 country code used for on-chain compliance',
     example: 'FR',
   })
   @IsString()

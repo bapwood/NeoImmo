@@ -1,18 +1,23 @@
 'use client';
 
 import Link from 'next/link';
-import type { RefObject } from 'react';
-import { resolveAssetUrl } from '@/src/lib/api';
+import { useEffect, useState, type RefObject } from 'react';
+import { requestJson, resolveAssetUrl } from '@/src/lib/api';
 import type { ResourceConfig, ResourceKey } from '@/src/lib/dashboard-resources';
 import type {
+  AuthSession,
   ClientPortfolio,
   PanelUser,
   PropertyRecord,
   RefreshTokenRecord,
+  RentCalendarResponse,
+  TokenSalesSeriesResponse,
   UserRecord,
 } from '@/src/lib/types';
 import OpportunityCard from '../opportunity-card';
+import RentPayoutCalendar from './rent-payout-calendar';
 import RevenueForecastChart from './revenue-forecast-chart';
+import SalesTrendChart from './sales-trend-chart';
 import { formatCurrency } from './utils';
 import type { PanelKey, ResourceState } from './types';
 import styles from './styles/overview-panel.module.css';
@@ -34,6 +39,7 @@ type DashboardOverviewPanelProps = {
   properties: PropertyRecord[];
   refreshTokens: RefreshTokenRecord[];
   resourceState: ResourceState;
+  session: AuthSession | null;
   totalTokenValue: number;
   user: PanelUser;
   users: UserRecord[];
@@ -56,6 +62,7 @@ export default function DashboardOverviewPanel({
   properties,
   refreshTokens,
   resourceState,
+  session,
   totalTokenValue,
   user,
   users,
@@ -64,17 +71,53 @@ export default function DashboardOverviewPanel({
   const walletVerified = user.walletStatus === 'VERIFIED';
   const positions = clientPortfolio?.positions ?? [];
 
+  const [rentCalendar, setRentCalendar] = useState<RentCalendarResponse | null>(null);
+  const [salesSeries, setSalesSeries] = useState<TokenSalesSeriesResponse | null>(null);
+
+  useEffect(() => {
+    if (!isAdmin || !session) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void requestJson<RentCalendarResponse>(
+      '/portfolio/admin/rent-calendar?monthsAhead=6',
+      undefined,
+      session,
+    )
+      .then((result) => {
+        if (!cancelled) {
+          setRentCalendar(result);
+        }
+      })
+      .catch(() => undefined);
+
+    void requestJson<TokenSalesSeriesResponse>(
+      '/crypto/system/sales-series?monthsBack=6',
+      undefined,
+      session,
+    )
+      .then((result) => {
+        if (!cancelled) {
+          setSalesSeries(result);
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAdmin, session]);
+
   return (
     <div className={styles.stack}>
       <section className={styles.heroPanel}>
         <div>
           <div className={styles.eyebrow}>Synthèse</div>
-          <h3 className={styles.sectionTitle}>{isAdmin ? 'Centre de pilotage' : ''}</h3>
-          <p className={styles.sectionCopy}>
-            {isAdmin
-              ? 'Supervisez l’activité de la plateforme, la qualité du catalogue et la vie des comptes.'
-              : 'Retrouvez votre portefeuille et les actifs actuellement ouverts à la consultation.'}
-          </p>
+          <h3 className={styles.sectionTitle}>
+            {isAdmin ? 'Centre de pilotage' : 'Mon portefeuille'}
+          </h3>
         </div>
 
         <div className={styles.heroGrid}>
@@ -159,7 +202,18 @@ export default function DashboardOverviewPanel({
             );
           })}
         </section>
-      ) : (
+      ) : null}
+
+      {isAdmin && rentCalendar ? (
+        <RentPayoutCalendar
+          months={rentCalendar.months}
+          onOpenRents={() => onPanelChange('rents')}
+        />
+      ) : null}
+
+      {isAdmin && salesSeries ? <SalesTrendChart months={salesSeries.months} /> : null}
+
+      {!isAdmin ? (
         <>
           {!user.walletAddress || !walletVerified ? (
             <section className={styles.accountBanner}>
@@ -241,18 +295,14 @@ export default function DashboardOverviewPanel({
             <RevenueForecastChart revenueSeries={clientPortfolio?.revenueSeries ?? []} />
           ) : null}
         </>
-      )}
+      ) : null}
 
       {!isAdmin ? (
         <section className={styles.catalogSection}>
           <div className={styles.catalogHeader}>
             <div>
               <div className={styles.eyebrow}>Marché primaire</div>
-              <h3 className={styles.sectionTitle}>Opportunités actuellement ouvertes à la consultation</h3>
-              <p className={styles.sectionCopy}>
-                Consultez la sélection d’actifs publiée par l’administration
-                et accédez aux fiches détaillées pour approfondir votre analyse.
-              </p>
+              <h3 className={styles.sectionTitle}>Opportunités ouvertes</h3>
             </div>
 
             <div className={styles.catalogActions}>

@@ -23,7 +23,7 @@ import { PreRegistrationModule } from './pre-registration/pre-registration.modul
     PropertyModule,
     RefreshTokenModule,
     FavoritesModule,
-    PreRegistrationModule
+    PreRegistrationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -38,7 +38,7 @@
   width: 54px;
   height: 54px;
   border-radius: 20px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+  background: var(--accent);
   color: white;
   font-size: 1.3rem;
   font-weight: 700;

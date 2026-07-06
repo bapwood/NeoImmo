@@ -48,6 +48,7 @@ import { MintPropertyInventoryDto } from './dto/mint-property-inventory.dto';
 import { PreparePropertyDeployDto } from './dto/prepare-property-deploy.dto';
 import { PrepareClientPrimaryBuyDto } from './dto/prepare-client-primary-buy.dto';
 import { PreparePrimaryBuyDto } from './dto/prepare-primary-buy.dto';
+import { RentStatementDto } from './dto/rent-statement.dto';
 import { SetBlockedCountryDto } from './dto/set-blocked-country.dto';
 import { SetBlocklistDto } from './dto/set-blocklist.dto';
 import { SyncWalletKycDto } from './dto/sync-wallet-kyc.dto';
@@ -355,6 +356,82 @@ export class BlockchainService {
         },
       },
     };
+  }
+
+  async getTokenSalesSeries(monthsBack = 6) {
+    const now = new Date();
+    const rangeEnd = this.shiftMonthUtc(this.startOfMonthUtc(now), 1);
+    const rangeStart = this.shiftMonthUtc(rangeEnd, -Math.max(1, monthsBack));
+
+    const operations = await this.prisma.blockchainOperation.findMany({
+      where: {
+        type: BlockchainOperationType.EXECUTE_PRIMARY_BUY,
+        status: BlockchainOperationStatus.CONFIRMED,
+        createdAt: {
+          gte: rangeStart,
+          lt: rangeEnd,
+        },
+      },
+      select: {
+        createdAt: true,
+        amount: true,
+        price: true,
+      },
+    });
+
+    const monthBuckets = new Map<
+      string,
+      { tokensSold: number; amountRaised: number; salesCount: number }
+    >();
+
+    for (const operation of operations) {
+      const monthKey = this.startOfMonthUtc(operation.createdAt).toISOString();
+      const bucket = monthBuckets.get(monthKey) ?? {
+        tokensSold: 0,
+        amountRaised: 0,
+        salesCount: 0,
+      };
+
+      const tokenAmount = Number(operation.amount ?? '0');
+      const unitPrice = Number(operation.price ?? '0');
+
+      bucket.tokensSold += Number.isFinite(tokenAmount) ? tokenAmount : 0;
+      bucket.amountRaised +=
+        Number.isFinite(tokenAmount) && Number.isFinite(unitPrice)
+          ? Math.round(tokenAmount * unitPrice)
+          : 0;
+      bucket.salesCount += 1;
+
+      monthBuckets.set(monthKey, bucket);
+    }
+
+    const months: Array<{
+      month: string;
+      label: string;
+      tokensSold: number;
+      amountRaised: number;
+      salesCount: number;
+    }> = [];
+
+    let cursor = rangeStart;
+    while (cursor < rangeEnd) {
+      const monthKey = cursor.toISOString();
+      const bucket = monthBuckets.get(monthKey) ?? {
+        tokensSold: 0,
+        amountRaised: 0,
+        salesCount: 0,
+      };
+
+      months.push({
+        month: monthKey,
+        label: this.formatRentMonthLabel(cursor),
+        ...bucket,
+      });
+
+      cursor = this.shiftMonthUtc(cursor, 1);
+    }
+
+    return { months };
   }
 
   async getPropertyMetadata(propertyId: number) {
@@ -1429,7 +1506,9 @@ export class BlockchainService {
         totalSupply = formatUnits(totalSupplyRaw, decimals);
       } catch (error) {
         onChainError =
-          error instanceof Error ? error.message : 'Lecture on-chain impossible.';
+          error instanceof Error
+            ? error.message
+            : 'Lecture on-chain impossible.';
       }
     }
 
@@ -1438,18 +1517,32 @@ export class BlockchainService {
     });
 
     const investorsCount = positions.length;
-    const totalInvested = positions.reduce((sum, position) => sum + position.investedTotal, 0);
+    const totalInvested = positions.reduce(
+      (sum, position) => sum + position.investedTotal,
+      0,
+    );
     const totalProjectedMonthlyIncome = positions.reduce(
       (sum, position) => sum + position.projectedMonthlyIncome,
       0,
     );
     const totalCurrentValuation = positions.reduce((sum, position) => {
       const tokenAmount = Number(position.tokenAmount);
-      return sum + Math.round((Number.isFinite(tokenAmount) ? tokenAmount : 0) * property.tokenPrice);
+      return (
+        sum +
+        Math.round(
+          (Number.isFinite(tokenAmount) ? tokenAmount : 0) *
+            property.tokenPrice,
+        )
+      );
     }, 0);
     const projectedAnnualYieldPercent =
       totalInvested > 0
-        ? Number((((totalProjectedMonthlyIncome * 12) / totalInvested) * 100).toFixed(2))
+        ? Number(
+            (
+              ((totalProjectedMonthlyIncome * 12) / totalInvested) *
+              100
+            ).toFixed(2),
+          )
         : 0;
 
     const revenueRows = await this.prisma.portfolioRevenue.findMany({
@@ -1457,11 +1550,18 @@ export class BlockchainService {
       orderBy: [{ month: 'asc' }],
     });
 
-    const monthBuckets = new Map<string, { month: string; paid: number; projected: number }>();
+    const monthBuckets = new Map<
+      string,
+      { month: string; paid: number; projected: number }
+    >();
 
     for (const row of revenueRows) {
       const key = row.month.toISOString();
-      const bucket = monthBuckets.get(key) ?? { month: key, paid: 0, projected: 0 };
+      const bucket = monthBuckets.get(key) ?? {
+        month: key,
+        paid: 0,
+        projected: 0,
+      };
 
       if (row.status === 'PAID') {
         bucket.paid += row.amount;
@@ -1483,7 +1583,10 @@ export class BlockchainService {
       }));
 
     const totalPaidToDate = months.reduce((sum, month) => sum + month.paid, 0);
-    const totalProjectedRemaining = months.reduce((sum, month) => sum + month.projected, 0);
+    const totalProjectedRemaining = months.reduce(
+      (sum, month) => sum + month.projected,
+      0,
+    );
 
     return {
       property: {
@@ -1569,6 +1672,152 @@ export class BlockchainService {
     }));
   }
 
+  async getRentStatement(propertyId: number, month: string) {
+    await this.getPropertyForBlockchain(propertyId);
+
+    const monthStart = this.startOfMonthUtc(new Date(month));
+
+    const statement = await this.prisma.rentStatement.findUnique({
+      where: {
+        propertyId_month: {
+          propertyId,
+          month: monthStart,
+        },
+      },
+    });
+
+    return statement;
+  }
+
+  async upsertRentStatement(
+    propertyId: number,
+    month: string,
+    input: RentStatementDto,
+    adminUserId: number,
+  ) {
+    const property = await this.getPropertyForBlockchain(propertyId);
+    const monthStart = this.startOfMonthUtc(new Date(month));
+    const monthEnd = this.shiftMonthUtc(monthStart, 1);
+
+    const alreadyPaidCount = await this.prisma.portfolioRevenue.count({
+      where: {
+        propertyId,
+        month: { gte: monthStart, lt: monthEnd },
+        status: 'PAID',
+      },
+    });
+
+    if (alreadyPaidCount > 0) {
+      throw new ConflictException(
+        'Ce mois a déjà été versé en partie ou en totalité, la fiche ne peut plus être modifiée.',
+      );
+    }
+
+    const netDistributable = Math.max(
+      0,
+      Math.round(
+        input.rentCollected -
+          (input.nonRecoverableCharges ?? 0) -
+          (input.propertyTaxMonthly ?? 0) -
+          (input.insuranceCosts ?? 0) -
+          (input.managementFee ?? 0) -
+          (input.maintenanceCost ?? 0) -
+          (input.blockchainFees ?? 0) -
+          (input.platformFee ?? 0),
+      ),
+    );
+
+    const positions = await this.prisma.portfolioPosition.findMany({
+      where: { propertyId },
+    });
+
+    const totalTokens = positions.reduce(
+      (sum, position) => sum + Number(position.tokenAmount || '0'),
+      0,
+    );
+
+    const statement = await this.prisma.$transaction(async (tx) => {
+      const savedStatement = await tx.rentStatement.upsert({
+        where: {
+          propertyId_month: {
+            propertyId,
+            month: monthStart,
+          },
+        },
+        create: {
+          propertyId,
+          month: monthStart,
+          rentCollected: input.rentCollected,
+          occupancyRatePct: input.occupancyRatePct,
+          nonRecoverableCharges: input.nonRecoverableCharges ?? 0,
+          propertyTaxMonthly: input.propertyTaxMonthly ?? 0,
+          insuranceCosts: input.insuranceCosts ?? 0,
+          managementFee: input.managementFee ?? 0,
+          maintenanceCost: input.maintenanceCost ?? 0,
+          blockchainFees: input.blockchainFees ?? 0,
+          platformFee: input.platformFee ?? 0,
+          netDistributable,
+          notes: input.notes,
+          createdById: adminUserId,
+        },
+        update: {
+          rentCollected: input.rentCollected,
+          occupancyRatePct: input.occupancyRatePct,
+          nonRecoverableCharges: input.nonRecoverableCharges ?? 0,
+          propertyTaxMonthly: input.propertyTaxMonthly ?? 0,
+          insuranceCosts: input.insuranceCosts ?? 0,
+          managementFee: input.managementFee ?? 0,
+          maintenanceCost: input.maintenanceCost ?? 0,
+          blockchainFees: input.blockchainFees ?? 0,
+          platformFee: input.platformFee ?? 0,
+          netDistributable,
+          notes: input.notes,
+          createdById: adminUserId,
+        },
+      });
+
+      let allocated = 0;
+
+      for (const [index, position] of positions.entries()) {
+        const tokenAmount = Number(position.tokenAmount || '0');
+        const isLast = index === positions.length - 1;
+        const share = totalTokens > 0 ? tokenAmount / totalTokens : 0;
+        const amount = isLast
+          ? Math.max(0, netDistributable - allocated)
+          : Math.round(netDistributable * share);
+
+        allocated += amount;
+
+        await tx.portfolioRevenue.upsert({
+          where: {
+            positionId_month: {
+              positionId: position.id,
+              month: monthStart,
+            },
+          },
+          create: {
+            positionId: position.id,
+            userId: position.userId,
+            propertyId,
+            month: monthStart,
+            amount,
+            status: 'PROJECTED',
+            label: 'Fiche de versement mensuelle',
+          },
+          update: {
+            amount,
+            label: 'Fiche de versement mensuelle',
+            errorMessage: null,
+          },
+        });
+      }
+
+      return savedStatement;
+    });
+
+    return statement;
+  }
+
   async payPropertyRent(propertyId: number, month: string) {
     this.ensureBlockchainEnabled();
 
@@ -1582,6 +1831,21 @@ export class BlockchainService {
 
     const monthStart = this.startOfMonthUtc(new Date(month));
     const monthEnd = this.shiftMonthUtc(monthStart, 1);
+
+    const statement = await this.prisma.rentStatement.findUnique({
+      where: {
+        propertyId_month: {
+          propertyId,
+          month: monthStart,
+        },
+      },
+    });
+
+    if (!statement) {
+      throw new BadRequestException(
+        "Renseigne d'abord la fiche de versement mensuelle (loyer encaissé, occupation, charges) avant de verser ce mois.",
+      );
+    }
 
     const rows = await this.prisma.portfolioRevenue.findMany({
       where: {

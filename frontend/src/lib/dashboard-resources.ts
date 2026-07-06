@@ -35,6 +35,7 @@ export interface FieldConfig {
   helperText?: string;
   readOnlyOnEdit?: boolean;
   options?: FieldOption[];
+  section?: string;
 }
 
 export interface ColumnConfig {
@@ -146,21 +147,56 @@ const userProfileFields: FieldConfig[] = [
 ];
 
 export const propertyFields: FieldConfig[] = [
-  { key: 'name', label: 'Nom', kind: 'text', required: true, placeholder: 'Appartement Paris 13' },
-  { key: 'localization', label: 'Localisation', kind: 'text', required: true, placeholder: 'Paris 13e' },
-  { key: 'livingArea', label: 'Surface', kind: 'text', required: true, placeholder: '72 m²' },
-  { key: 'score', label: 'Score', kind: 'number', required: true, placeholder: '4' },
-  { key: 'description', label: 'Description', kind: 'textarea', required: true, placeholder: 'Belle exposition, proche métro...' },
-  { key: 'roomNumber', label: 'Pièces', kind: 'number', required: true, placeholder: '3' },
-  { key: 'bathroomNumber', label: 'Salles de bain', kind: 'number', required: true, placeholder: '2' },
-  { key: 'tokenNumber', label: 'Nombre de tokens', kind: 'number', required: true, placeholder: '100000' },
-  { key: 'tokenPrice', label: 'Prix du token', kind: 'number', required: true, placeholder: '1' },
+  { key: 'name', label: 'Nom', kind: 'text', required: true, placeholder: 'Appartement Paris 13', section: 'Présentation' },
+  { key: 'localization', label: 'Localisation', kind: 'text', required: true, placeholder: 'Paris 13e', section: 'Présentation' },
+  { key: 'livingArea', label: 'Surface', kind: 'text', required: true, placeholder: '72 m²', section: 'Présentation' },
+  { key: 'description', label: 'Description', kind: 'textarea', required: true, placeholder: 'Belle exposition, proche métro...', section: 'Présentation' },
+  { key: 'roomNumber', label: 'Pièces', kind: 'number', required: true, placeholder: '3', section: 'Présentation' },
+  { key: 'bathroomNumber', label: 'Salles de bain', kind: 'number', required: true, placeholder: '2', section: 'Présentation' },
+
+  { key: 'tokenNumber', label: 'Nombre de tokens', kind: 'number', required: true, placeholder: '100000', section: 'Tokenisation' },
+  { key: 'tokenPrice', label: 'Prix du token (centimes)', kind: 'number', required: true, placeholder: '100', helperText: 'Peut être aligné sur le prix suggéré affiché dans l’analyse financière une fois les données d’acquisition renseignées.', section: 'Tokenisation' },
+
+  { key: 'purchasePrice', label: "Prix d'achat hors frais (centimes)", kind: 'number', placeholder: '25000000', section: 'Acquisition' },
+  { key: 'notaryFeesPct', label: 'Frais de notaire (%)', kind: 'number', placeholder: '7.5', section: 'Acquisition' },
+  { key: 'agencyFeesPct', label: "Frais d'agence (%)", kind: 'number', placeholder: '4', section: 'Acquisition' },
+  { key: 'diagnosticFees', label: 'Frais de diagnostics (centimes)', kind: 'number', placeholder: '50000', section: 'Acquisition' },
+  { key: 'renovationCost', label: 'Coût des travaux (centimes)', kind: 'number', placeholder: '1500000', section: 'Acquisition' },
+  { key: 'furnitureCost', label: 'Coût du mobilier (centimes)', kind: 'number', placeholder: '300000', section: 'Acquisition' },
+
+  { key: 'platformEquity', label: 'Apport en fonds propres plateforme (centimes)', kind: 'number', placeholder: '0', section: 'Financement' },
+  { key: 'loanAmount', label: 'Montant emprunt bancaire (centimes)', kind: 'number', placeholder: '0', section: 'Financement' },
+  { key: 'loanRatePct', label: "Taux d'intérêt emprunt (%)", kind: 'number', placeholder: '3.5', section: 'Financement' },
+  { key: 'loanDurationYears', label: "Durée de l'emprunt (années)", kind: 'number', placeholder: '15', section: 'Financement' },
+
+  { key: 'monthlyRent', label: 'Loyer mensuel prévisionnel (centimes)', kind: 'number', placeholder: '120000', section: 'Revenus locatifs' },
+  { key: 'occupancyRatePct', label: "Taux d'occupation prévisionnel (%)", kind: 'number', placeholder: '95', section: 'Revenus locatifs' },
+  { key: 'rentType', label: 'Type de location', kind: 'text', placeholder: 'Nue, meublée, saisonnière...', section: 'Revenus locatifs' },
+
+  { key: 'nonRecoverableCharges', label: 'Charges copropriété non récupérables (centimes/an)', kind: 'number', placeholder: '80000', section: 'Charges d’exploitation' },
+  { key: 'propertyTax', label: 'Taxe foncière (centimes/an)', kind: 'number', placeholder: '120000', section: 'Charges d’exploitation' },
+  { key: 'insurancePnoAnnual', label: 'Assurance PNO (centimes/an)', kind: 'number', placeholder: '15000', section: 'Charges d’exploitation' },
+  { key: 'insuranceGliPct', label: 'Assurance loyers impayés (% du loyer)', kind: 'number', placeholder: '3', section: 'Charges d’exploitation' },
+  { key: 'managementFeePct', label: 'Frais de gestion locative (% du loyer)', kind: 'number', placeholder: '7', section: 'Charges d’exploitation' },
+  { key: 'maintenanceProvisionPct', label: 'Provision entretien (% du loyer)', kind: 'number', placeholder: '3', section: 'Charges d’exploitation' },
+  { key: 'majorRepairsProvisionPct', label: 'Provision grosses réparations (% du loyer)', kind: 'number', placeholder: '5', section: 'Charges d’exploitation' },
+
+  { key: 'subscriptionFeePct', label: "Frais d'entrée investisseur (%)", kind: 'number', placeholder: '2', section: 'Frais plateforme' },
+  { key: 'platformAnnualFeePct', label: 'Frais de gestion annuels plateforme (% du montant levé)', kind: 'number', placeholder: '1', section: 'Frais plateforme' },
+  { key: 'exitFeePct', label: 'Frais de sortie/revente (%)', kind: 'number', placeholder: '2', section: 'Frais plateforme' },
+  { key: 'rentDistributionCommissionPct', label: 'Commission sur loyers distribués (%)', kind: 'number', placeholder: '5', section: 'Frais plateforme' },
+
+  { key: 'holdingPeriodYears', label: 'Durée de détention prévisionnelle (années)', kind: 'number', placeholder: '10', section: 'Sortie / revente' },
+  { key: 'exitAppreciationPct', label: 'Valorisation annuelle anticipée du marché (%)', kind: 'number', placeholder: '2', section: 'Sortie / revente' },
+  { key: 'resaleFeesPct', label: 'Frais de revente côté vendeur (%)', kind: 'number', placeholder: '6', section: 'Sortie / revente' },
+
   {
     key: 'images',
     label: 'Images',
     kind: 'array',
     placeholder: 'Uploader des images',
     helperText: 'Ajoutez des images, réorganisez leur ordre puis validez pour enregistrer la carte client.',
+    section: 'Présentation',
   },
   {
     key: 'keyPoints',
@@ -168,6 +204,7 @@ export const propertyFields: FieldConfig[] = [
     kind: 'array',
     placeholder: 'Piscine\nLumineux',
     helperText: 'Un point clé par ligne ou séparé par des virgules.',
+    section: 'Présentation',
   },
 ];
 
@@ -275,7 +312,7 @@ const adminPropertyResource: ResourceConfig = {
     { key: 'name', label: 'Nom' },
     { key: 'ownerId', label: 'Propriétaire', kind: 'number' },
     { key: 'localization', label: 'Localisation' },
-    { key: 'score', label: 'Score', kind: 'number' },
+    { key: 'score', label: 'Score (/100)', kind: 'number' },
     { key: 'keyPoints', label: 'Points clés', kind: 'array' },
     { key: 'tokenPrice', label: 'Prix token', kind: 'currency' },
     { key: 'tokenNumber', label: 'Tokens', kind: 'number' },

@@ -1,0 +1,18 @@
+{
+  "network": "localhost",
+  "chainId": 11155111,
+  "deployedAt": "2026-06-30T07:05:50.074Z",
+  "backendOperator": {
+    "address": "0x69624F2321E8BB7100527AA26AF95D99F2330D1D",
+    "accountIndex": 0
+  },
+  "treasury": {
+    "address": "0xa5f37365660Aae545c28d3907065207beF8a1d64",
+    "accountIndex": 1
+  },
+  "contracts": {
+    "kycRegistry": "0x488C9E417c433E99f3e311328a540AEE34D991c8",
+    "transferGate": "0x6A079A28c18fd3c9F01E765EEf70ba12290908cC",
+    "propertyFactory": "0xB6C2a611a9DdB8a9f2C6393048Bb934FBd9c94f0"
+  }
+}

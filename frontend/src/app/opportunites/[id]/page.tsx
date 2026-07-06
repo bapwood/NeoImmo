@@ -368,7 +368,7 @@ export default function OpportunityDetailPage() {
             </div>
             <div>
               <span>Score</span>
-              <strong>{property.score}/5</strong>
+              <strong>{property.score}/100</strong>
             </div>
           </div>
 
@@ -422,17 +422,6 @@ export default function OpportunityDetailPage() {
 
       <section className={styles.contentGrid}>
         <article className={styles.sectionCard}>
-          <div className={styles.eyebrow}>Positionnement</div>
-          <h3>Lecture de l’actif</h3>
-          <p className={styles.sectionCopy}>
-            Cette fiche centralise les informations clés utiles à l’analyse:
-            emplacement, niveau de qualité perçu, configuration du bien et
-            structure de l’offre. Elle sert de base de lecture commune pour
-            l’étude de chaque actif publié au catalogue.
-          </p>
-        </article>
-
-        <article className={styles.sectionCard}>
           <div className={styles.eyebrow}>Points clés</div>
           <h3>Attributs distinctifs</h3>
           {property.keyPoints.length > 0 ? (
@@ -442,10 +431,7 @@ export default function OpportunityDetailPage() {
               ))}
             </ul>
           ) : (
-            <p className={styles.sectionCopy}>
-              Les attributs différenciants de cet actif seront précisés
-              prochainement par l’équipe de gestion.
-            </p>
+            <p className={styles.sectionCopy}>Aucun point clé renseigné.</p>
           )}
         </article>
       </section>

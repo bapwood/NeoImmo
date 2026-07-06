@@ -157,9 +157,7 @@ export default function TransactionsPanel({ session, properties, users }: Props)
         <div>
           <div className={styles.eyebrow}>Administration</div>
           <h2 className={styles.title}>Transactions</h2>
-          <p className={styles.subtitle}>
-            Toutes les opérations on-chain — déploiements, achats, loyers et conformité — filtrables par bien et par client.
-          </p>
+          <p className={styles.subtitle}>Déploiements, achats, loyers, conformité.</p>
         </div>
         <button type="button" className={styles.secondaryButton} onClick={() => void load()}>
           Actualiser

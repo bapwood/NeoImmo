@@ -11,6 +11,7 @@ import {
   Role,
 } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { computePropertyFinancials } from 'src/property/property-financials';
 
 type PortfolioTx = Prisma.TransactionClient;
 type PurchaseHistoryOperation = Prisma.BlockchainOperationGetPayload<{
@@ -171,8 +172,10 @@ export class PortfolioService {
     }
 
     const investedDelta = Math.round(amountValue * input.unitPrice);
-    const projectedMonthlyIncome =
-      this.computeProjectedMonthlyIncome(investedDelta);
+    const projectedMonthlyIncome = this.computeProjectedMonthlyIncome(
+      investedDelta,
+      property,
+    );
 
     await this.prisma.$transaction(async (tx) => {
       const existingPosition = await tx.portfolioPosition.findUnique({
@@ -383,6 +386,105 @@ export class PortfolioService {
     };
   }
 
+  async getAdminRentCalendar(monthsAhead = 6) {
+    const now = new Date();
+    const rangeStart = this.startOfMonth(now);
+    const rangeEnd = this.shiftMonth(rangeStart, Math.max(1, monthsAhead));
+
+    const rows = await this.prisma.portfolioRevenue.findMany({
+      where: {
+        month: {
+          gte: rangeStart,
+          lt: rangeEnd,
+        },
+      },
+      include: {
+        property: {
+          select: { id: true, name: true },
+        },
+      },
+      orderBy: [{ month: 'asc' }],
+    });
+
+    type PropertyBucket = {
+      propertyId: number;
+      propertyName: string;
+      amount: number;
+      paidAmount: number;
+      recipientsCount: number;
+      paidCount: number;
+    };
+
+    const monthMap = new Map<string, Map<number, PropertyBucket>>();
+
+    for (const row of rows) {
+      const monthKey = row.month.toISOString();
+
+      if (!monthMap.has(monthKey)) {
+        monthMap.set(monthKey, new Map());
+      }
+
+      const propertyBuckets = monthMap.get(monthKey)!;
+      const bucket = propertyBuckets.get(row.propertyId) ?? {
+        propertyId: row.propertyId,
+        propertyName: row.property.name,
+        amount: 0,
+        paidAmount: 0,
+        recipientsCount: 0,
+        paidCount: 0,
+      };
+
+      bucket.amount += row.amount;
+      bucket.recipientsCount += 1;
+
+      if (row.status === PortfolioRevenueStatus.PAID) {
+        bucket.paidAmount += row.amount;
+        bucket.paidCount += 1;
+      }
+
+      propertyBuckets.set(row.propertyId, bucket);
+    }
+
+    const months = [...monthMap.entries()]
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([monthKey, propertyBuckets]) => {
+        const propertyEntries = [...propertyBuckets.values()];
+        const properties = propertyEntries
+          .map((bucket) => ({
+            propertyId: bucket.propertyId,
+            propertyName: bucket.propertyName,
+            amount: bucket.amount,
+            recipientsCount: bucket.recipientsCount,
+            status:
+              bucket.paidCount === 0
+                ? 'PROJECTED'
+                : bucket.paidCount === bucket.recipientsCount
+                  ? 'PAID'
+                  : 'PARTIAL',
+          }))
+          .sort((left, right) => right.amount - left.amount);
+
+        const totalProjected = propertyEntries.reduce(
+          (sum, bucket) => sum + bucket.amount,
+          0,
+        );
+        const totalPaid = propertyEntries.reduce(
+          (sum, bucket) => sum + bucket.paidAmount,
+          0,
+        );
+
+        return {
+          month: monthKey,
+          label: this.formatMonthLabel(new Date(monthKey)),
+          totalProjected,
+          totalPaid,
+          properties,
+        };
+      });
+
+    return { months };
+  }
+
   async seedHistoricalRevenueForUser(userId: number) {
     const positions = await this.prisma.portfolioPosition.findMany({
       where: {
@@ -589,10 +691,44 @@ export class PortfolioService {
       }));
   }
 
-  private computeProjectedMonthlyIncome(investedTotal: number) {
-    const monthlyYieldBps = Number(
-      process.env.PORTFOLIO_MONTHLY_YIELD_BPS ?? '45',
-    );
+  private computeProjectedMonthlyIncome(
+    investedTotal: number,
+    property?: {
+      tokenNumber: number;
+      tokenPrice: number;
+      purchasePrice?: number | null;
+      notaryFeesPct?: number | null;
+      agencyFeesPct?: number | null;
+      diagnosticFees?: number | null;
+      renovationCost?: number | null;
+      furnitureCost?: number | null;
+      platformEquity?: number | null;
+      loanAmount?: number | null;
+      loanRatePct?: number | null;
+      loanDurationYears?: number | null;
+      monthlyRent?: number | null;
+      occupancyRatePct?: number | null;
+      nonRecoverableCharges?: number | null;
+      propertyTax?: number | null;
+      insurancePnoAnnual?: number | null;
+      insuranceGliPct?: number | null;
+      managementFeePct?: number | null;
+      maintenanceProvisionPct?: number | null;
+      majorRepairsProvisionPct?: number | null;
+      platformAnnualFeePct?: number | null;
+      exitFeePct?: number | null;
+      rentDistributionCommissionPct?: number | null;
+      holdingPeriodYears?: number | null;
+      exitAppreciationPct?: number | null;
+      resaleFeesPct?: number | null;
+    },
+  ) {
+    const financials = property ? computePropertyFinancials(property) : null;
+    const monthlyYieldBps =
+      financials?.investorAnnualYieldBps != null
+        ? financials.investorAnnualYieldBps / 12
+        : Number(process.env.PORTFOLIO_MONTHLY_YIELD_BPS ?? '45');
+
     return Math.max(1, Math.round((investedTotal * monthlyYieldBps) / 10000));
   }
 

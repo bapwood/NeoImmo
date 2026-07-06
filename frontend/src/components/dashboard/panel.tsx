@@ -782,6 +782,7 @@ export default function DashboardPanel({
             properties={properties}
             refreshTokens={refreshTokens}
             resourceState={resourceState}
+            session={session}
             totalTokenValue={totalTokenValue}
             user={session.user}
             users={users}
@@ -834,6 +835,9 @@ export default function DashboardPanel({
         {activePanel !== 'overview' &&
         activePanel !== 'opportunities' &&
         activePanel !== 'favorites' &&
+        activePanel !== 'wallets' &&
+        activePanel !== 'rents' &&
+        activePanel !== 'transactions' &&
         activeResource?.key === 'user' &&
         activeResource.singleton &&
         activeUserProfile ? (
@@ -849,6 +853,9 @@ export default function DashboardPanel({
         {activePanel !== 'overview' &&
         activePanel !== 'opportunities' &&
         activePanel !== 'favorites' &&
+        activePanel !== 'wallets' &&
+        activePanel !== 'rents' &&
+        activePanel !== 'transactions' &&
         activeResource &&
         !isClientPortfolioPanel &&
         !(activeResource.key === 'user' && activeResource.singleton) ? (

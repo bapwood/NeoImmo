@@ -559,7 +559,7 @@ export default function LandingPage({ onAuthenticated }: LandingPageProps) {
                     <div className={styles.featureList}>
                       <span>{property.livingArea}</span>
                       <span>{property.roomNumber} pièces</span>
-                      <span>Score {property.score}/5</span>
+                      <span>Score {property.score}/100</span>
                     </div>
                     <p>{summarizeProperty(property)}</p>
                     <div className={styles.chipRow}>

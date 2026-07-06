@@ -21,14 +21,15 @@ type DemoPropertyInput = {
   keyPoints: string[];
 };
 
-const DEFAULT_MNEMONIC = 'test test test test test test test test test test test junk';
+const DEFAULT_MNEMONIC =
+  'test test test test test test test test test test test junk';
 
 const demoProperties: DemoPropertyInput[] = [
   {
     name: 'Residence Horizon Marseille',
     localization: 'Marseille 8e',
     livingArea: '84 m²',
-    score: 4,
+    score: 74,
     description:
       'Actif résidentiel premium proche littoral, pensé pour un rendement locatif régulier et une liquidité simple en marché primaire.',
     roomNumber: 4,
@@ -45,7 +46,7 @@ const demoProperties: DemoPropertyInput[] = [
     name: 'Cour Saint Martin Lyon',
     localization: 'Lyon 6e',
     livingArea: '63 m²',
-    score: 5,
+    score: 88,
     description:
       'Appartement coeur de ville avec forte tension locative, structuré pour une distribution mensuelle stable et une lecture simple côté investisseur.',
     roomNumber: 3,
@@ -61,7 +62,9 @@ const demoProperties: DemoPropertyInput[] = [
 ];
 
 function deriveHardhatWallet(index: number) {
-  const mnemonic = Mnemonic.fromPhrase(process.env.BLOCKCHAIN_MNEMONIC ?? DEFAULT_MNEMONIC);
+  const mnemonic = Mnemonic.fromPhrase(
+    process.env.BLOCKCHAIN_MNEMONIC ?? DEFAULT_MNEMONIC,
+  );
   return HDNodeWallet.fromMnemonic(mnemonic, `m/44'/60'/0'/0/${index}`).address;
 }
 
@@ -254,7 +257,9 @@ async function ensureTokenizedCatalog(
     const property = await upsertDemoProperty(prisma, input);
     propertyIds.push(property.id);
 
-    const tokenState = await blockchainService.getPropertyTokenState(property.id);
+    const tokenState = await blockchainService.getPropertyTokenState(
+      property.id,
+    );
 
     if (tokenState.property.contractAddress && !tokenState.onChain.available) {
       await prisma.property.update({
@@ -297,7 +302,9 @@ async function ensureTokenizedCatalog(
     }
 
     if (refreshedProperty.tokenizationStatus === TokenizationStatus.ACTIVE) {
-      const refreshedTokenState = await blockchainService.getPropertyTokenState(property.id);
+      const refreshedTokenState = await blockchainService.getPropertyTokenState(
+        property.id,
+      );
 
       if (refreshedTokenState.onChain.totalSupply === '0') {
         await blockchainService.mintPropertyInventory(property.id, {});
@@ -305,7 +312,10 @@ async function ensureTokenizedCatalog(
     }
 
     if (refreshedProperty.tokenizationStatus === TokenizationStatus.PAUSED) {
-      await blockchainService.setPropertyPurchaseAvailability(property.id, true);
+      await blockchainService.setPropertyPurchaseAvailability(
+        property.id,
+        true,
+      );
     }
   }
 
@@ -374,7 +384,12 @@ async function main() {
     await resetLocalDemoBlockchainState(prisma);
     await blockchainService.bootstrapSystemWallets();
     await ensureTokenizedCatalog(prisma, blockchainService);
-    await seedDemoPrimaryBuys(prisma, blockchainService, portfolioService, client.id);
+    await seedDemoPrimaryBuys(
+      prisma,
+      blockchainService,
+      portfolioService,
+      client.id,
+    );
     const portfolio = await portfolioService.getClientPortfolio(client.id);
 
     console.log(

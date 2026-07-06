@@ -1,9 +1,7 @@
 .shell {
   min-height: 100vh;
   padding: 2rem;
-  background:
-    radial-gradient(circle at top left, rgba(var(--theme-primary-rgb), 0.14), transparent 34%),
-    linear-gradient(180deg, rgba(var(--theme-secondary-rgb), 0.22), rgba(var(--theme-surface-rgb), 0.94));
+  background: var(--background);
 }
 
 .surface {
@@ -360,7 +358,7 @@
   padding: 0.9rem 1.15rem;
   border: none;
   border-radius: 16px;
-  background: linear-gradient(135deg, var(--theme-primary), rgba(var(--theme-primary-rgb), 0.78));
+  background: var(--accent);
   color: white;
   font-weight: 800;
   cursor: pointer;

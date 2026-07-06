@@ -65,6 +65,36 @@ type PayRentResult = {
   }>;
 };
 
+type RentStatement = {
+  id: number;
+  propertyId: number;
+  month: string;
+  rentCollected: number;
+  occupancyRatePct: number;
+  nonRecoverableCharges: number;
+  propertyTaxMonthly: number;
+  insuranceCosts: number;
+  managementFee: number;
+  maintenanceCost: number;
+  blockchainFees: number;
+  platformFee: number;
+  netDistributable: number;
+  notes: string | null;
+};
+
+type StatementFormState = {
+  rentCollected: string;
+  occupancyRatePct: string;
+  nonRecoverableCharges: string;
+  propertyTaxMonthly: string;
+  insuranceCosts: string;
+  managementFee: string;
+  maintenanceCost: string;
+  blockchainFees: string;
+  platformFee: string;
+  notes: string;
+};
+
 type NoticeState = { tone: 'success' | 'error'; message: string } | null;
 
 type Props = {
@@ -73,6 +103,64 @@ type Props = {
 
 function formatEur(cents: number): string {
   return `${(cents / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
+}
+
+function eurosToCents(value: string): number {
+  const parsed = Number(value.replace(',', '.'));
+  return Number.isFinite(parsed) ? Math.round(parsed * 100) : 0;
+}
+
+function centsToEurosInput(cents: number): string {
+  return (cents / 100).toString();
+}
+
+function emptyStatementForm(defaults?: {
+  monthlyRent?: number | null;
+  occupancyRatePct?: number | null;
+}): StatementFormState {
+  return {
+    rentCollected: defaults?.monthlyRent != null ? centsToEurosInput(defaults.monthlyRent) : '',
+    occupancyRatePct: defaults?.occupancyRatePct != null ? String(defaults.occupancyRatePct) : '100',
+    nonRecoverableCharges: '',
+    propertyTaxMonthly: '',
+    insuranceCosts: '',
+    managementFee: '',
+    maintenanceCost: '',
+    blockchainFees: '',
+    platformFee: '',
+    notes: '',
+  };
+}
+
+function statementToFormState(statement: RentStatement): StatementFormState {
+  return {
+    rentCollected: centsToEurosInput(statement.rentCollected),
+    occupancyRatePct: String(statement.occupancyRatePct),
+    nonRecoverableCharges: centsToEurosInput(statement.nonRecoverableCharges),
+    propertyTaxMonthly: centsToEurosInput(statement.propertyTaxMonthly),
+    insuranceCosts: centsToEurosInput(statement.insuranceCosts),
+    managementFee: centsToEurosInput(statement.managementFee),
+    maintenanceCost: centsToEurosInput(statement.maintenanceCost),
+    blockchainFees: centsToEurosInput(statement.blockchainFees),
+    platformFee: centsToEurosInput(statement.platformFee),
+    notes: statement.notes ?? '',
+  };
+}
+
+function computeNetPreview(form: StatementFormState): number {
+  return Math.max(
+    0,
+    Math.round(
+      eurosToCents(form.rentCollected) -
+        eurosToCents(form.nonRecoverableCharges) -
+        eurosToCents(form.propertyTaxMonthly) -
+        eurosToCents(form.insuranceCosts) -
+        eurosToCents(form.managementFee) -
+        eurosToCents(form.maintenanceCost) -
+        eurosToCents(form.blockchainFees) -
+        eurosToCents(form.platformFee),
+    ),
+  );
 }
 
 function shortenValue(value: string | null | undefined, visible = 8) {
@@ -103,6 +191,12 @@ export default function PropertyRentManagement({ propertyId }: Props) {
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<NoticeState>(null);
+  const [statement, setStatement] = useState<RentStatement | null>(null);
+  const [statementForm, setStatementForm] = useState<StatementFormState>(() =>
+    emptyStatementForm(),
+  );
+  const [showStatementForm, setShowStatementForm] = useState(false);
+  const [savingStatement, setSavingStatement] = useState(false);
 
   async function redirectToSignin() {
     clearStoredSession();
@@ -139,6 +233,27 @@ export default function PropertyRentManagement({ propertyId }: Props) {
     [propertyId],
   );
 
+  const loadStatement = useCallback(
+    async (currentSession: AuthSession, month: string, propertyForDefaults?: PropertyRecord | null) => {
+      const found = await requestJson<RentStatement | null>(
+        `/crypto/properties/${propertyId}/rent-management/${month}-01/statement`,
+        undefined,
+        currentSession,
+      );
+      setStatement(found);
+      setShowStatementForm(false);
+      setStatementForm(
+        found
+          ? statementToFormState(found)
+          : emptyStatementForm({
+              monthlyRent: propertyForDefaults?.monthlyRent,
+              occupancyRatePct: propertyForDefaults?.occupancyRatePct,
+            }),
+      );
+    },
+    [propertyId],
+  );
+
   const loadAll = useCallback(
     async (explicitSession?: AuthSession | null) => {
       const currentSession = explicitSession ?? readStoredSession();
@@ -166,6 +281,7 @@ export default function PropertyRentManagement({ propertyId }: Props) {
       try {
         await loadOverview(currentSession);
         await loadMonthDetail(currentSession, monthValue);
+        await loadStatement(currentSession, monthValue, property);
       } catch (requestError) {
         if (requestError instanceof ApiError && requestError.code === 'AUTH_EXPIRED') {
           await redirectToSignin();
@@ -182,7 +298,7 @@ export default function PropertyRentManagement({ propertyId }: Props) {
         setBooting(false);
       }
     },
-    [loadOverview, loadMonthDetail, monthValue, propertyId, router],
+    [loadOverview, loadMonthDetail, loadStatement, monthValue, property, propertyId, router],
   );
 
   useEffect(() => {
@@ -193,7 +309,10 @@ export default function PropertyRentManagement({ propertyId }: Props) {
   useEffect(() => {
     if (!session) return;
     setLoading(true);
-    loadMonthDetail(session, monthValue)
+    Promise.all([
+      loadMonthDetail(session, monthValue),
+      loadStatement(session, monthValue, property),
+    ])
       .catch((requestError) => {
         setError(
           requestError instanceof Error
@@ -212,8 +331,72 @@ export default function PropertyRentManagement({ propertyId }: Props) {
     return { total, paid, remaining: total - paid, count: records.length };
   }, [records]);
 
+  function handleStatementFieldChange(field: keyof StatementFormState, value: string) {
+    setStatementForm((current) => ({ ...current, [field]: value }));
+  }
+
+  async function handleSaveStatement() {
+    if (!session) return;
+
+    setNotice(null);
+    setSavingStatement(true);
+
+    try {
+      const saved = await requestJson<RentStatement>(
+        `/crypto/properties/${propertyId}/rent-management/${monthValue}-01/statement`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            rentCollected: eurosToCents(statementForm.rentCollected),
+            occupancyRatePct: Number(statementForm.occupancyRatePct.replace(',', '.')) || 0,
+            nonRecoverableCharges: eurosToCents(statementForm.nonRecoverableCharges),
+            propertyTaxMonthly: eurosToCents(statementForm.propertyTaxMonthly),
+            insuranceCosts: eurosToCents(statementForm.insuranceCosts),
+            managementFee: eurosToCents(statementForm.managementFee),
+            maintenanceCost: eurosToCents(statementForm.maintenanceCost),
+            blockchainFees: eurosToCents(statementForm.blockchainFees),
+            platformFee: eurosToCents(statementForm.platformFee),
+            notes: statementForm.notes.trim() || undefined,
+          }),
+        },
+        session,
+      );
+
+      setStatement(saved);
+      setShowStatementForm(false);
+      setNotice({
+        tone: 'success',
+        message: `Fiche enregistrée : ${formatEur(saved.netDistributable)} à distribuer ce mois-ci.`,
+      });
+
+      await loadMonthDetail(session, monthValue);
+      await loadOverview(session);
+    } catch (requestError) {
+      if (requestError instanceof ApiError && requestError.code === 'AUTH_EXPIRED') {
+        await redirectToSignin();
+        return;
+      }
+
+      setNotice({
+        tone: 'error',
+        message:
+          requestError instanceof Error ? requestError.message : "Impossible d'enregistrer la fiche.",
+      });
+    } finally {
+      setSavingStatement(false);
+    }
+  }
+
   async function handlePayMonth() {
     if (!session) return;
+
+    if (!statement) {
+      setNotice({
+        tone: 'error',
+        message: "Renseigne d'abord la fiche de versement mensuelle avant de verser ce mois.",
+      });
+      return;
+    }
 
     if (
       !window.confirm(
@@ -259,6 +442,8 @@ export default function PropertyRentManagement({ propertyId }: Props) {
     }
   }
 
+  const netPreview = computeNetPreview(statementForm);
+
   const coverImage = resolveAssetUrl(property?.images[0]);
 
   if (booting) {
@@ -280,7 +465,7 @@ export default function PropertyRentManagement({ propertyId }: Props) {
             className={baseStyles.backButton}
             onClick={() => router.push('/?panel=property')}
           >
-            ← Retour aux actifs
+            Retour aux actifs
           </button>
           <div className={baseStyles.headerActions}>
             <button
@@ -397,6 +582,167 @@ export default function PropertyRentManagement({ propertyId }: Props) {
             <section className={baseStyles.panel}>
               <div className={baseStyles.panelHeader}>
                 <div>
+                  <div className={baseStyles.panelEyebrow}>Fiche mensuelle</div>
+                  <h2 className={baseStyles.panelTitle}>Fiche de versement — {monthValue}</h2>
+                </div>
+                <button
+                  type="button"
+                  className={baseStyles.secondaryButton}
+                  onClick={() => setShowStatementForm((current) => !current)}
+                >
+                  {showStatementForm ? 'Fermer' : statement ? 'Modifier la fiche' : 'Renseigner la fiche'}
+                </button>
+              </div>
+
+              {statement && !showStatementForm ? (
+                <div className={styles.monthSummary}>
+                  <span>
+                    Loyer encaissé : <strong>{formatEur(statement.rentCollected)}</strong>
+                  </span>
+                  <span>
+                    Occupation : <strong>{statement.occupancyRatePct}%</strong>
+                  </span>
+                  <span>
+                    Net à distribuer : <strong>{formatEur(statement.netDistributable)}</strong>
+                  </span>
+                </div>
+              ) : null}
+
+              {!statement && !showStatementForm ? (
+                <div className={baseStyles.inlineWarning}>
+                  Aucune fiche renseignée pour ce mois : le loyer réellement encaissé, le taux
+                  d’occupation et les frais doivent être saisis avant de pouvoir verser.
+                </div>
+              ) : null}
+
+              {showStatementForm ? (
+                <div className={styles.statementForm}>
+                  <div className={styles.statementGrid}>
+                    <label className={styles.monthField}>
+                      <span>Loyer encaissé ce mois (€)</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        className={styles.monthInput}
+                        value={statementForm.rentCollected}
+                        onChange={(e) => handleStatementFieldChange('rentCollected', e.target.value)}
+                      />
+                    </label>
+                    <label className={styles.monthField}>
+                      <span>Taux d’occupation du locataire (%)</span>
+                      <input
+                        type="number"
+                        step="1"
+                        min={0}
+                        max={100}
+                        className={styles.monthInput}
+                        value={statementForm.occupancyRatePct}
+                        onChange={(e) => handleStatementFieldChange('occupancyRatePct', e.target.value)}
+                      />
+                    </label>
+                    <label className={styles.monthField}>
+                      <span>Charges copropriété non récupérables (€)</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        className={styles.monthInput}
+                        value={statementForm.nonRecoverableCharges}
+                        onChange={(e) => handleStatementFieldChange('nonRecoverableCharges', e.target.value)}
+                      />
+                    </label>
+                    <label className={styles.monthField}>
+                      <span>Quote-part taxe foncière (€)</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        className={styles.monthInput}
+                        value={statementForm.propertyTaxMonthly}
+                        onChange={(e) => handleStatementFieldChange('propertyTaxMonthly', e.target.value)}
+                      />
+                    </label>
+                    <label className={styles.monthField}>
+                      <span>Assurances PNO/GLI (€)</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        className={styles.monthInput}
+                        value={statementForm.insuranceCosts}
+                        onChange={(e) => handleStatementFieldChange('insuranceCosts', e.target.value)}
+                      />
+                    </label>
+                    <label className={styles.monthField}>
+                      <span>Frais de gestion locative (€)</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        className={styles.monthInput}
+                        value={statementForm.managementFee}
+                        onChange={(e) => handleStatementFieldChange('managementFee', e.target.value)}
+                      />
+                    </label>
+                    <label className={styles.monthField}>
+                      <span>Entretien / maintenance (€)</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        className={styles.monthInput}
+                        value={statementForm.maintenanceCost}
+                        onChange={(e) => handleStatementFieldChange('maintenanceCost', e.target.value)}
+                      />
+                    </label>
+                    <label className={styles.monthField}>
+                      <span>Frais de transaction blockchain (€)</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        className={styles.monthInput}
+                        value={statementForm.blockchainFees}
+                        onChange={(e) => handleStatementFieldChange('blockchainFees', e.target.value)}
+                      />
+                    </label>
+                    <label className={styles.monthField}>
+                      <span>Commission plateforme (€)</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        className={styles.monthInput}
+                        value={statementForm.platformFee}
+                        onChange={(e) => handleStatementFieldChange('platformFee', e.target.value)}
+                      />
+                    </label>
+                  </div>
+
+                  <label className={styles.monthField}>
+                    <span>Notes (incident locatif, travaux imprévus...)</span>
+                    <textarea
+                      className={styles.statementNotes}
+                      rows={3}
+                      value={statementForm.notes}
+                      onChange={(e) => handleStatementFieldChange('notes', e.target.value)}
+                    />
+                  </label>
+
+                  <div className={styles.monthSummary}>
+                    <span>
+                      Net à distribuer aux détenteurs : <strong>{formatEur(netPreview)}</strong>
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    className={styles.payButton}
+                    onClick={() => void handleSaveStatement()}
+                    disabled={savingStatement}
+                  >
+                    {savingStatement ? 'Enregistrement...' : 'Enregistrer la fiche'}
+                  </button>
+                </div>
+              ) : null}
+            </section>
+
+            <section className={baseStyles.panel}>
+              <div className={baseStyles.panelHeader}>
+                <div>
                   <div className={baseStyles.panelEyebrow}>Versement</div>
                   <h2 className={baseStyles.panelTitle}>Détail du mois sélectionné</h2>
                 </div>
@@ -426,7 +772,8 @@ export default function PropertyRentManagement({ propertyId }: Props) {
                   type="button"
                   className={styles.payButton}
                   onClick={() => void handlePayMonth()}
-                  disabled={paying || monthSummary.remaining <= 0}
+                  disabled={paying || monthSummary.remaining <= 0 || !statement}
+                  title={!statement ? 'Renseigne la fiche de versement du mois avant de verser.' : undefined}
                 >
                   {paying
                     ? 'Versement en cours…'

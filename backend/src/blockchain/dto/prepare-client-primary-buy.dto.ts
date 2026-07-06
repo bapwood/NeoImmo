@@ -13,7 +13,8 @@ export class PrepareClientPrimaryBuyDto {
   propertyId: number;
 
   @ApiProperty({
-    description: 'Amount of tokens to buy, expressed in human units before decimals',
+    description:
+      'Amount of tokens to buy, expressed in human units before decimals',
     example: '3',
   })
   @IsString()

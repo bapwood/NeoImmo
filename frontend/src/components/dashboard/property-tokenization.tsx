@@ -516,7 +516,7 @@ export default function PropertyTokenization({
             className={styles.backButton}
             onClick={() => router.push('/?panel=property')}
           >
-            ← Retour aux actifs
+            Retour aux actifs
           </button>
           <div className={styles.headerActions}>
             <button
@@ -593,6 +593,65 @@ export default function PropertyTokenization({
               </article>
             </section>
 
+            {property.financials ? (
+              <section className={styles.metricsGrid}>
+                <article className={styles.metricCard}>
+                  <div className={styles.metricLabel}>Prix suggéré / part</div>
+                  <div className={styles.metricValue}>
+                    {property.financials.suggestedTokenPrice != null
+                      ? formatCurrency(property.financials.suggestedTokenPrice)
+                      : '—'}
+                  </div>
+                </article>
+                <article className={styles.metricCard}>
+                  <div className={styles.metricLabel}>Rendement brut</div>
+                  <div className={styles.metricValue}>
+                    {property.financials.grossYieldPct != null
+                      ? `${percentFormatter.format(property.financials.grossYieldPct)} %`
+                      : '—'}
+                  </div>
+                </article>
+                <article className={styles.metricCard}>
+                  <div className={styles.metricLabel}>Rendement net</div>
+                  <div className={styles.metricValue}>
+                    {property.financials.netYieldPct != null
+                      ? `${percentFormatter.format(property.financials.netYieldPct)} %`
+                      : '—'}
+                  </div>
+                </article>
+                <article className={styles.metricCard}>
+                  <div className={styles.metricLabel}>Cash-on-cash</div>
+                  <div className={styles.metricValue}>
+                    {property.financials.cashOnCashPct != null
+                      ? `${percentFormatter.format(property.financials.cashOnCashPct)} %`
+                      : '—'}
+                  </div>
+                </article>
+                <article className={styles.metricCard}>
+                  <div className={styles.metricLabel}>Cash-flow / part / mois</div>
+                  <div className={styles.metricValue}>
+                    {formatCurrency(property.financials.perTokenMonthlyIncome)}
+                  </div>
+                </article>
+                <article className={styles.metricCard}>
+                  <div className={styles.metricLabel}>MOIC (sortie)</div>
+                  <div className={styles.metricValue}>
+                    {property.financials.moic != null
+                      ? `${percentFormatter.format(property.financials.moic)}x`
+                      : '—'}
+                  </div>
+                </article>
+                <article className={styles.metricCard}>
+                  <div className={styles.metricLabel}>Payback</div>
+                  <div className={styles.metricValue}>
+                    {property.financials.paybackYears != null
+                      ? `${percentFormatter.format(property.financials.paybackYears)} ans`
+                      : '—'}
+                  </div>
+                </article>
+              </section>
+            ) : null}
+
             {/* Stepper 2 étapes */}
             <div className={styles.stepper}>
               <div className={`${styles.stepConnector} ${step1Done ? styles.stepConnectorDone : ``}`} />
@@ -648,7 +707,7 @@ export default function PropertyTokenization({
                             onClick={() => void handleFundBackendWallet()}
                             disabled={loading || !backendWalletAddress}
                           >
-                            Envoyer le gas →
+                            Envoyer le gas
                           </button>
                           {latestFundingTxHash && (
                             <a
@@ -760,7 +819,7 @@ export default function PropertyTokenization({
                         onClick={() => void handleMint()}
                         disabled={loading}
                       >
-                        {loading ? 'Mint en cours...' : 'Lancer la vente →'}
+                        {loading ? 'Mint en cours...' : 'Lancer la vente'}
                       </button>
                     </div>
                   </div>

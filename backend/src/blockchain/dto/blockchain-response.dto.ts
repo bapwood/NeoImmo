@@ -262,7 +262,8 @@ export class PropertyMetadataPayloadDto {
 
 export class PropertyMetadataIntegrityDto {
   @ApiProperty({
-    example: '0x8ed7549c07a6b1c16bd7d8faab6e6dd54f6c4fbc0897e67e0f6205f925e773ca',
+    example:
+      '0x8ed7549c07a6b1c16bd7d8faab6e6dd54f6c4fbc0897e67e0f6205f925e773ca',
   })
   hash: string;
 
@@ -311,12 +312,14 @@ export class WalletKycResultDto {
   countryCode: string;
 
   @ApiProperty({
-    example: '0x8e1cccb3906f5241c132d2cbbe1af4f8d9ef90f8666fb5db5298125a3d338a9f',
+    example:
+      '0x8e1cccb3906f5241c132d2cbbe1af4f8d9ef90f8666fb5db5298125a3d338a9f',
   })
   allowTxHash: string;
 
   @ApiProperty({
-    example: '0xd050f7c36166d2083bf5d6eef19fe7757faeb1c92d25a5482246592bfab8c0f5',
+    example:
+      '0xd050f7c36166d2083bf5d6eef19fe7757faeb1c92d25a5482246592bfab8c0f5',
   })
   countryTxHash: string;
 }
@@ -340,7 +343,8 @@ export class TransactionResultDto {
   requestId: string;
 
   @ApiProperty({
-    example: '0x17a567b01df6b62cf0a2aa8d4e5e4eeab4d45c0af2211b78f6e08ce8aa7af3d3',
+    example:
+      '0x17a567b01df6b62cf0a2aa8d4e5e4eeab4d45c0af2211b78f6e08ce8aa7af3d3',
   })
   txHash: string;
 }
@@ -348,7 +352,8 @@ export class TransactionResultDto {
 export class MintPropertyInventoryResponseDto extends TransactionResultDto {
   @ApiPropertyOptional({
     type: String,
-    example: '0x4a6644b1ea2bb1c50c7a2fe4a03e3cc92d9279cc1f36f278eb7ec48b1cd6fa12',
+    example:
+      '0x4a6644b1ea2bb1c50c7a2fe4a03e3cc92d9279cc1f36f278eb7ec48b1cd6fa12',
     nullable: true,
   })
   approvalTxHash?: string | null;
@@ -367,7 +372,8 @@ export class MintPropertyInventoryResponseDto extends TransactionResultDto {
 export class ExecutePrimaryBuyResponseDto extends TransactionResultDto {
   @ApiPropertyOptional({
     type: String,
-    example: '0x4a6644b1ea2bb1c50c7a2fe4a03e3cc92d9279cc1f36f278eb7ec48b1cd6fa12',
+    example:
+      '0x4a6644b1ea2bb1c50c7a2fe4a03e3cc92d9279cc1f36f278eb7ec48b1cd6fa12',
     nullable: true,
   })
   approvalTxHash?: string | null;
@@ -492,7 +498,8 @@ export class PreparedAdminPropertyDeployMessageDto {
   symbol: string;
 
   @ApiProperty({
-    example: '0x8ed7549c07a6b1c16bd7d8faab6e6dd54f6c4fbc0897e67e0f6205f925e773ca',
+    example:
+      '0x8ed7549c07a6b1c16bd7d8faab6e6dd54f6c4fbc0897e67e0f6205f925e773ca',
   })
   metadataHash: string;
 
@@ -668,7 +675,8 @@ export class BlockchainOperationDto {
 
   @ApiPropertyOptional({
     type: String,
-    example: '0x17a567b01df6b62cf0a2aa8d4e5e4eeab4d45c0af2211b78f6e08ce8aa7af3d3',
+    example:
+      '0x17a567b01df6b62cf0a2aa8d4e5e4eeab4d45c0af2211b78f6e08ce8aa7af3d3',
     nullable: true,
   })
   txHash?: string | null;
@@ -768,7 +776,8 @@ export class PropertyTokenRecordDto {
 
   @ApiPropertyOptional({
     type: String,
-    example: '0x8ed7549c07a6b1c16bd7d8faab6e6dd54f6c4fbc0897e67e0f6205f925e773ca',
+    example:
+      '0x8ed7549c07a6b1c16bd7d8faab6e6dd54f6c4fbc0897e67e0f6205f925e773ca',
     nullable: true,
   })
   metadataHash?: string | null;
@@ -782,7 +791,8 @@ export class PropertyTokenRecordDto {
 
   @ApiPropertyOptional({
     type: String,
-    example: '0x17a567b01df6b62cf0a2aa8d4e5e4eeab4d45c0af2211b78f6e08ce8aa7af3d3',
+    example:
+      '0x17a567b01df6b62cf0a2aa8d4e5e4eeab4d45c0af2211b78f6e08ce8aa7af3d3',
     nullable: true,
   })
   deployTxHash?: string | null;
@@ -849,7 +859,8 @@ export class PropertyFactoryInfoDto {
   metadataUri: string;
 
   @ApiProperty({
-    example: '0x8ed7549c07a6b1c16bd7d8faab6e6dd54f6c4fbc0897e67e0f6205f925e773ca',
+    example:
+      '0x8ed7549c07a6b1c16bd7d8faab6e6dd54f6c4fbc0897e67e0f6205f925e773ca',
   })
   metadataHash: string;
 
@@ -938,7 +949,8 @@ export class PropertyOnChainSnapshotDto {
 
   @ApiPropertyOptional({
     type: String,
-    example: '115792089237316195423570985008687907853269984665640564039457584007913129639935',
+    example:
+      '115792089237316195423570985008687907853269984665640564039457584007913129639935',
     nullable: true,
   })
   backendAllowance?: string | null;

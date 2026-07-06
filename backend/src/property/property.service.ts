@@ -10,6 +10,11 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { Prisma, Property } from '@prisma/client';
 import type { AuthenticatedRequestUser } from 'src/auth/types/authenticated-request';
 import { deleteStoredPropertyImages } from './property-upload';
+import {
+  computePropertyFinancials,
+  computePropertyScore,
+  type PropertyFinancialSummary,
+} from './property-financials';
 
 type PropertyWithKeyPoints = Prisma.PropertyGetPayload<{
   include: {
@@ -19,20 +24,26 @@ type PropertyWithKeyPoints = Prisma.PropertyGetPayload<{
 
 type PublicProperty = Property & {
   keyPoints: string[];
+  financials: PropertyFinancialSummary | null;
 };
 
 @Injectable()
 export class PropertyService {
   constructor(private prisma: PrismaService) {}
 
-  async create(data: CreatePropertyDto, user: AuthenticatedRequestUser): Promise<PublicProperty> {
+  async create(
+    data: CreatePropertyDto,
+    user: AuthenticatedRequestUser,
+  ): Promise<PublicProperty> {
     const { keyPoints, ...propertyData } = data;
     const normalizedImages = this.normalizeImagePaths(propertyData.images);
+    const score = computePropertyScore(propertyData);
 
     try {
       const property = await this.prisma.property.create({
         data: {
           ...propertyData,
+          score,
           images: normalizedImages,
           ownerId: user.role === 'CLIENT' ? user.userId : undefined,
           keyPoints: this.buildKeyPointCreateData(keyPoints),
@@ -88,7 +99,9 @@ export class PropertyService {
     }
   }
 
-  async findManageable(user: AuthenticatedRequestUser): Promise<PublicProperty[]> {
+  async findManageable(
+    user: AuthenticatedRequestUser,
+  ): Promise<PublicProperty[]> {
     try {
       const properties = await this.prisma.property.findMany({
         include: {
@@ -217,12 +230,16 @@ export class PropertyService {
     try {
       const existingProperty = await this.assertPropertyAccess(id, user);
       const { keyPoints, ...propertyData } = data;
+      const score = computePropertyScore(propertyData);
       const normalizedImages = this.normalizeImagePaths(propertyData.images);
       const removedImages = this.getRemovedImages(
         existingProperty.images,
         normalizedImages,
       );
-      addedImages = this.getAddedImages(existingProperty.images, normalizedImages);
+      addedImages = this.getAddedImages(
+        existingProperty.images,
+        normalizedImages,
+      );
 
       const property = await this.prisma.property.update({
         where: {
@@ -230,11 +247,10 @@ export class PropertyService {
         },
         data: {
           ...propertyData,
+          score,
           images: normalizedImages,
           ownerId:
-            user.role === 'CLIENT'
-              ? user.userId
-              : existingProperty.ownerId,
+            user.role === 'CLIENT' ? user.userId : existingProperty.ownerId,
           keyPoints: this.buildKeyPointUpdateData(keyPoints),
         },
         include: {
@@ -246,7 +262,10 @@ export class PropertyService {
 
       return this.toPublicProperty(property);
     } catch (error) {
-      if (error instanceof ForbiddenException || error instanceof NotFoundException) {
+      if (
+        error instanceof ForbiddenException ||
+        error instanceof NotFoundException
+      ) {
         throw error;
       }
 
@@ -279,7 +298,10 @@ export class PropertyService {
 
       return deletedProperty;
     } catch (error) {
-      if (error instanceof ForbiddenException || error instanceof NotFoundException) {
+      if (
+        error instanceof ForbiddenException ||
+        error instanceof NotFoundException
+      ) {
         throw error;
       }
 
@@ -326,6 +348,7 @@ export class PropertyService {
     return {
       ...propertyData,
       keyPoints: keyPoints.map((keyPoint) => keyPoint.label),
+      financials: computePropertyFinancials(propertyData),
     };
   }
 
@@ -369,12 +392,17 @@ export class PropertyService {
       return [];
     }
 
-    return [...new Set(
-      keyPoints
-        .map((value) => value.trim())
-        .filter(Boolean)
-        .map((value) => value.charAt(0).toUpperCase() + value.slice(1).toLowerCase()),
-    )];
+    return [
+      ...new Set(
+        keyPoints
+          .map((value) => value.trim())
+          .filter(Boolean)
+          .map(
+            (value) =>
+              value.charAt(0).toUpperCase() + value.slice(1).toLowerCase(),
+          ),
+      ),
+    ];
   }
 
   private normalizeImagePaths(imagePaths?: string[]) {
@@ -382,11 +410,11 @@ export class PropertyService {
       return [];
     }
 
-    return [...new Set(
-      imagePaths
-        .map((imagePath) => imagePath.trim())
-        .filter(Boolean),
-    )];
+    return [
+      ...new Set(
+        imagePaths.map((imagePath) => imagePath.trim()).filter(Boolean),
+      ),
+    ];
   }
 
   private getRemovedImages(currentImages: string[], nextImages: string[]) {

@@ -120,7 +120,7 @@ export default function OpportunityCard({
         <div className={styles.meta}>
           <span>{property.livingArea}</span>
           <span>{property.roomNumber} pièces</span>
-          <span>Score {property.score}/5</span>
+          <span>Score {property.score}/100</span>
         </div>
 
         {!compact ? (

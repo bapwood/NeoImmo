@@ -248,7 +248,8 @@ export class PurchaseHistoryItemDto {
   requestId?: string | null;
 
   @ApiProperty({
-    example: '0x2556a306b9edee6111d68bf30f78200e07dc9cd53035f1f561d3e21429921268',
+    example:
+      '0x2556a306b9edee6111d68bf30f78200e07dc9cd53035f1f561d3e21429921268',
   })
   txHash: string;
 

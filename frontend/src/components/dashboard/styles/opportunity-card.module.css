@@ -82,9 +82,8 @@
   justify-content: space-between;
   padding: 1rem;
   border-radius: 22px;
-  background:
-    radial-gradient(circle at top left, rgba(var(--theme-secondary-rgb), 0.72), transparent 28%),
-    linear-gradient(135deg, rgba(var(--theme-primary-rgb), 0.92), rgba(var(--theme-primary-rgb), 0.74));
+  border: 1px solid rgba(var(--theme-primary-rgb), 0.12);
+  background: var(--panel);
 }
 
 .pillActive {

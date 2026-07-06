@@ -26,7 +26,9 @@ export class AuthService {
   ) {}
 
   async signIn(signInDto: SignInDto) {
-    const existingUser = await this.userService.getUserEntityByEmail(signInDto.email);
+    const existingUser = await this.userService.getUserEntityByEmail(
+      signInDto.email,
+    );
 
     if (!existingUser) {
       throw new UnauthorizedException('Wrong credentials');
@@ -58,7 +60,9 @@ export class AuthService {
   }
 
   async register(registerDto: RegisterDto) {
-    const emailInUse = await this.userService.getUserEntityByEmail(registerDto.email);
+    const emailInUse = await this.userService.getUserEntityByEmail(
+      registerDto.email,
+    );
 
     if (emailInUse) {
       throw new BadRequestException('Email already in use');
@@ -92,7 +96,9 @@ export class AuthService {
       throw new BadRequestException('An admin account already exists');
     }
 
-    const emailInUse = await this.userService.getUserEntityByEmail(registerDto.email);
+    const emailInUse = await this.userService.getUserEntityByEmail(
+      registerDto.email,
+    );
 
     if (emailInUse) {
       throw new BadRequestException('Email already in use');

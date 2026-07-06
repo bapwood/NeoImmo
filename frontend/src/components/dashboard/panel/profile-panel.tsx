@@ -224,10 +224,6 @@ export default function DashboardProfilePanel({
             <div>
               <div className={styles.eyebrow}>Mon compte</div>
               <h3>{summarizeName(user)}</h3>
-              <p>
-                Centralisez vos informations personnelles, fiscales et investisseur
-                pour préparer les futurs parcours KYC sans repasser par plusieurs écrans.
-              </p>
               <div className={styles.metaLine}>
                 <span
                   className={
@@ -287,10 +283,6 @@ export default function DashboardProfilePanel({
                 modifier
               </button>
             </div>
-            <p>
-              Cette page remplace la table brute pour vous proposer un espace profil
-              directement exploitable, plus lisible et plus proche d’un vrai onboarding.
-            </p>
           </div>
 
           {notice ? (
@@ -427,10 +419,6 @@ export default function DashboardProfilePanel({
           <div>
             <div className={styles.eyebrow}>Synthèse</div>
             <h3>Lecture rapide</h3>
-            <p>
-              Un point de lecture métier sur les informations déjà saisies et celles
-              qu’il faudra stabiliser pour un vrai workflow KYC.
-            </p>
           </div>
 
           <section className={styles.sideSection}>
@@ -457,10 +445,6 @@ export default function DashboardProfilePanel({
 
           <section className={styles.sideSection}>
             <div className={styles.eyebrow}>Préparation KYC</div>
-            <p>
-              Les données déjà présentes permettent de préremplir une bonne partie
-              d’un futur parcours de vérification.
-            </p>
             <ul className={styles.readyList}>
               <li>Identité civile et coordonnées de résidence</li>
               <li>Nationalité et lieu de naissance</li>

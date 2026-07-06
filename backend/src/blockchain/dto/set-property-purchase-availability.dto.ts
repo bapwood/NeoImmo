@@ -3,7 +3,8 @@ import { IsBoolean } from 'class-validator';
 
 export class SetPropertyPurchaseAvailabilityDto {
   @ApiProperty({
-    description: 'Whether the tokenized property should remain open to client primary purchases',
+    description:
+      'Whether the tokenized property should remain open to client primary purchases',
     example: false,
   })
   @IsBoolean()

@@ -22,14 +22,20 @@ export class AuthController {
 
   @Post('register')
   @ApiResponse({ status: 201, description: 'Register ok' })
-  @ApiResponse({ status: 400, description: 'Missing/Already in use credentials' })
+  @ApiResponse({
+    status: 400,
+    description: 'Missing/Already in use credentials',
+  })
   register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
   }
 
   @Post('bootstrap-admin')
   @ApiResponse({ status: 201, description: 'Bootstrap admin created' })
-  @ApiResponse({ status: 400, description: 'Admin already exists or invalid payload' })
+  @ApiResponse({
+    status: 400,
+    description: 'Admin already exists or invalid payload',
+  })
   bootstrapAdmin(@Body() registerDto: RegisterDto) {
     return this.authService.bootstrapAdmin(registerDto);
   }

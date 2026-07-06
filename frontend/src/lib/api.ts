@@ -108,5 +108,11 @@ export async function requestJson<T>(
     return undefined as T;
   }
 
-  return response.json() as Promise<T>;
+  const rawBody = await response.text();
+
+  if (rawBody.length === 0) {
+    return undefined as T;
+  }
+
+  return JSON.parse(rawBody) as T;
 }

@@ -59,10 +59,6 @@ export default function DashboardPortfolioPanel({
         <div>
           <div className={styles.eyebrow}>Portefeuille investisseur</div>
           <h3 className={styles.title}>Vue consolidée de vos positions</h3>
-          <p className={styles.copy}>
-            Suivez vos parts détenues, vos revenus mensuels projetés et la valeur
-            actuelle de votre exposition immobilière.
-          </p>
         </div>
 
         <div className={styles.headerActions}>

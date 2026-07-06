@@ -53,9 +53,7 @@
   border-radius: 24px;
   padding: 1.4rem;
   border: 1px solid rgba(var(--theme-primary-rgb), 0.12);
-  background:
-    radial-gradient(circle at top right, rgba(var(--theme-primary-rgb), 0.1), transparent 30%),
-    linear-gradient(180deg, rgba(255,255,255,0.97), rgba(247,250,255,0.94));
+  background: var(--panel);
   box-shadow: var(--shadow-soft);
   display: grid;
   gap: 0.6rem;
@@ -277,7 +275,7 @@
   border: none;
   border-radius: 12px;
   padding: 0.5rem 0.9rem;
-  background: linear-gradient(135deg, var(--accent), rgba(var(--theme-primary-rgb), 0.82));
+  background: var(--accent);
   color: white;
   font-weight: 600;
   font-size: 0.82rem;
@@ -315,7 +313,7 @@
   inset: 0;
   right: auto;
   border-radius: 99px;
-  background: linear-gradient(90deg, var(--accent), rgba(var(--theme-primary-rgb), 0.7));
+  background: var(--accent);
   transition: width 400ms ease;
 }
 

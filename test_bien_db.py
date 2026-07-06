@@ -5,11 +5,17 @@ de fonctionnement pour des tests manuels répétés.
 
 Ce script :
   1. Crée/actualise 5 clients (profil complet, wallet fixe, KYC vérifié FR).
-  2. Crée 10 biens immobiliers (avec photos prises sur internet).
+  2. Crée 10 biens immobiliers avec l'ensemble des variables de rentabilité
+     (acquisition, financement, loyers, charges, frais plateforme, sortie) —
+     le score de chaque bien est calculé automatiquement par le backend.
   3. Déploie et mint chaque bien on-chain (signature EIP-712 admin simulée).
   4. Associe des parts de biens à des clients (achats primaires réels on-chain).
-  5. Déclenche un premier versement de loyer pour générer des transactions
-     de type RENT_PAYOUT en plus des achats.
+  5. Affiche l'échéancier de loyers admin (tous biens confondus) AVANT versement.
+  6. Renseigne la fiche de versement mensuelle de chaque bien (loyer encaissé,
+     occupation, charges réelles) puis déclenche le versement on-chain
+     correspondant, pour générer des transactions RENT_PAYOUT.
+  7. Réaffiche l'échéancier après versement (pour constater le passage à
+     "versé") et affiche la tendance des ventes de tokens sur 6 mois.
 
 Les wallets clients et le wallet de signature admin sont des clés privées
 générées une fois puis codées EN DUR ci-dessous : relancer le script plusieurs
@@ -30,6 +36,11 @@ Prérequis :
     serveur distant (ex: 3001 sur le VPS de prod) — vérifier avec
     `cat .env | grep SERVER_PORT` avant de lancer, sinon le script échoue en
     "Connection refused".
+  - Pour une démonstration complète du versement de loyer (fiche + paiement),
+    le mois courant ne doit pas avoir déjà été versé pour les biens ciblés
+    (la fiche refuse toute modification dès qu'un versement a eu lieu ce
+    mois-ci). Sur une base déjà utilisée, repartir de zéro avec
+    `python3 vide_db.py --yes` avant de relancer ce script.
 
 Usage:
   BACKEND_URL=http://localhost:3000 ADMIN_EMAIL=admin@neoimmo.local ADMIN_PASSWORD=admin python3 test_bien_db.py
@@ -310,29 +321,128 @@ def upsert_client(session, spec):
 # ---------------------------------------------------------------------------
 
 def sample_property(i):
+    """Génère un bien avec toutes les variables de rentabilité du modèle
+    financier (acquisition, financement, loyers, charges, frais plateforme,
+    sortie), cohérentes entre elles, plutôt qu'un simple tokenNumber/tokenPrice
+    arbitraire.
+    """
     cities = ["Paris 13e", "Lyon 2e", "Marseille 6e", "Toulouse", "Bordeaux", "Lille", "Nice", "Nantes", "Strasbourg", "Montpellier"]
     kp_pool = ["Balcon", "Luminosité", "Proche métro", "Parking", "Ascenseur", "Rénové", "Calme", "Vue", "Piscine"]
+    rent_types = ["Nue", "Meublée", "Saisonnière", "Coliving"]
     city = cities[(i - 1) % len(cities)]
     living = f"{random.randint(20, 150)}m2"
-    score = random.randint(1, 5)
     rooms = random.randint(1, 5)
     baths = random.randint(1, 3)
     tokens = random.choice([10000, 50000, 100000, 200000])
-    token_price = random.choice([100, 150, 200, 250, 300, 500])  # en centimes d'euro
     photos = random.sample(PHOTO_POOL, k=2)
+    rent_type = random.choice(rent_types)
+
+    # --- Acquisition (centimes) ---
+    purchase_price = random.randint(150_000_00, 500_000_00)
+    notary_fees_pct = round(random.uniform(7, 8), 2)
+    agency_fees_pct = round(random.uniform(0, 5), 2)
+    diagnostic_fees = random.randint(300_00, 800_00)
+    renovation_cost = random.randint(0, 20_000_00)
+    furniture_cost = random.randint(2_000_00, 8_000_00) if rent_type in ("Meublée", "Saisonnière", "Coliving") else 0
+
+    # --- Financement : pas d'apport ni d'emprunt, 100% financé par les tokens ---
+    platform_equity = 0
+    loan_amount = 0
+    loan_rate_pct = 0
+    loan_duration_years = 0
+
+    total_acquisition_cost = round(
+        purchase_price * (1 + notary_fees_pct / 100 + agency_fees_pct / 100)
+        + diagnostic_fees + renovation_cost + furniture_cost
+    )
+    token_price = max(100, round(total_acquisition_cost / tokens))
+
+    # --- Revenus locatifs ---
+    monthly_rent = round(purchase_price * random.uniform(0.0035, 0.006))
+    occupancy_rate_pct = round(random.uniform(90, 100), 1)
+
+    # --- Charges d'exploitation (annuelles, centimes) ---
+    non_recoverable_charges = random.randint(60_000, 150_000)
+    property_tax = random.randint(80_000, 200_000)
+    insurance_pno_annual = random.randint(10_000, 25_000)
+    insurance_gli_pct = round(random.uniform(2, 3.5), 2)
+    management_fee_pct = round(random.uniform(6, 8), 2)
+    maintenance_provision_pct = round(random.uniform(2, 4), 2)
+    major_repairs_provision_pct = round(random.uniform(3, 6), 2)
+
+    # --- Frais plateforme ---
+    subscription_fee_pct = round(random.uniform(1, 3), 2)
+    platform_annual_fee_pct = round(random.uniform(0.8, 1.5), 2)
+    exit_fee_pct = round(random.uniform(1, 3), 2)
+    rent_distribution_commission_pct = round(random.uniform(3, 6), 2)
+
+    # --- Sortie / revente ---
+    holding_period_years = random.randint(8, 12)
+    exit_appreciation_pct = round(random.uniform(1, 3), 2)
+    resale_fees_pct = round(random.uniform(5, 7), 2)
+
     return {
         "name": f"Bien Simulation {i} - {city}",
         "localization": city,
         "livingArea": living,
-        "score": score,
         "description": f"Bien de simulation pour test applicatif, situé à {city}.",
         "roomNumber": rooms,
         "bathroomNumber": baths,
         "tokenNumber": tokens,
         "tokenPrice": token_price,
+        "purchasePrice": purchase_price,
+        "notaryFeesPct": notary_fees_pct,
+        "agencyFeesPct": agency_fees_pct,
+        "diagnosticFees": diagnostic_fees,
+        "renovationCost": renovation_cost,
+        "furnitureCost": furniture_cost,
+        "platformEquity": platform_equity,
+        "loanAmount": loan_amount,
+        "loanRatePct": loan_rate_pct,
+        "loanDurationYears": loan_duration_years,
+        "monthlyRent": monthly_rent,
+        "occupancyRatePct": occupancy_rate_pct,
+        "rentType": rent_type,
+        "nonRecoverableCharges": non_recoverable_charges,
+        "propertyTax": property_tax,
+        "insurancePnoAnnual": insurance_pno_annual,
+        "insuranceGliPct": insurance_gli_pct,
+        "managementFeePct": management_fee_pct,
+        "maintenanceProvisionPct": maintenance_provision_pct,
+        "majorRepairsProvisionPct": major_repairs_provision_pct,
+        "subscriptionFeePct": subscription_fee_pct,
+        "platformAnnualFeePct": platform_annual_fee_pct,
+        "exitFeePct": exit_fee_pct,
+        "rentDistributionCommissionPct": rent_distribution_commission_pct,
+        "holdingPeriodYears": holding_period_years,
+        "exitAppreciationPct": exit_appreciation_pct,
+        "resaleFeesPct": resale_fees_pct,
         "images": photos,
         "keyPoints": random.sample(kp_pool, k=min(3, len(kp_pool))),
     }
+
+
+def format_eur(cents):
+    return f"{(cents or 0) / 100:,.0f} €".replace(",", " ")
+
+
+def print_property_financials(prop):
+    financials = prop.get("financials")
+    score = prop.get("score")
+
+    if not financials:
+        print(f"    Score : {score}/100 (pas de données financières)")
+        return
+
+    net_yield = financials.get("netYieldPct")
+    cash_on_cash = financials.get("cashOnCashPct")
+    monthly_income = financials.get("perTokenMonthlyIncome")
+
+    print(
+        f"    Score : {score}/100 · rendement net "
+        f"{net_yield:.2f}% · cash-on-cash {cash_on_cash:.2f}% · "
+        f"revenu/part/mois {format_eur(monthly_income)}"
+    )
 
 
 def upsert_property(session, payload):
@@ -340,9 +450,11 @@ def upsert_property(session, payload):
     existing = next((p for p in manageable if p["name"] == payload["name"]), None)
     if existing:
         print(f"  - {payload['name']}: déjà présent (id={existing['id']})")
+        print_property_financials(existing)
         return existing
     created = request_json("POST", session, "/property", payload)
     print(f"  - {payload['name']}: créé (id={created['id']})")
+    print_property_financials(created)
     return created
 
 
@@ -421,9 +533,59 @@ def buy_shares(session, property_id, property_token_price, user, amount):
             raise
 
 
-def pay_current_month_rent(session, property_id):
+def build_rent_statement_payload(prop):
+    """Dérive une fiche de versement mensuelle plausible à partir des
+    hypothèses de rentabilité saisies sur le bien (monthlyRent, charges...).
+    Le versement on-chain exige désormais qu'une fiche existe pour le mois
+    ciblé avant de pouvoir distribuer les loyers.
+    """
+    monthly_rent = prop.get("monthlyRent") or 0
+    occupancy_rate_pct = prop.get("occupancyRatePct")
+    if occupancy_rate_pct is None:
+        occupancy_rate_pct = 100
+
+    non_recoverable_annual = prop.get("nonRecoverableCharges") or 0
+    property_tax_annual = prop.get("propertyTax") or 0
+    insurance_pno_annual = prop.get("insurancePnoAnnual") or 0
+    insurance_gli_pct = prop.get("insuranceGliPct") or 0
+    management_fee_pct = prop.get("managementFeePct") or 0
+    maintenance_provision_pct = prop.get("maintenanceProvisionPct") or 0
+    rent_distribution_commission_pct = prop.get("rentDistributionCommissionPct") or 0
+
+    return {
+        "rentCollected": monthly_rent,
+        "occupancyRatePct": occupancy_rate_pct,
+        "nonRecoverableCharges": round(non_recoverable_annual / 12),
+        "propertyTaxMonthly": round(property_tax_annual / 12),
+        "insuranceCosts": round(insurance_pno_annual / 12 + monthly_rent * insurance_gli_pct / 100),
+        "managementFee": round(monthly_rent * management_fee_pct / 100),
+        "maintenanceCost": round(monthly_rent * maintenance_provision_pct / 100),
+        "blockchainFees": 500,
+        "platformFee": round(monthly_rent * rent_distribution_commission_pct / 100),
+        "notes": "Fiche générée automatiquement par test_bien_db.py",
+    }
+
+
+def submit_rent_statement(session, property_id, prop, month_start):
+    payload = build_rent_statement_payload(prop)
+    try:
+        return request_json(
+            "POST", session, f"/crypto/properties/{property_id}/rent-management/{month_start}/statement",
+            payload,
+        )
+    except RuntimeError as error:
+        print(f"    Fiche de versement impossible: {error}")
+        return None
+
+
+def pay_current_month_rent(session, property_id, prop):
     from datetime import datetime, timezone
     month_start = datetime.now(timezone.utc).replace(day=1).strftime("%Y-%m-%d")
+
+    statement = submit_rent_statement(session, property_id, prop, month_start)
+    if not statement:
+        return None
+
     try:
         result = request_json(
             "POST", session, f"/crypto/properties/{property_id}/rent-management/pay",
@@ -433,6 +595,39 @@ def pay_current_month_rent(session, property_id):
     except RuntimeError as error:
         print(f"    Versement de loyer ignoré: {error}")
         return None
+
+
+def print_rent_calendar(session, months_ahead=6):
+    """Affiche l'échéancier admin (tous biens confondus) sur les prochains
+    mois — la même donnée que le widget calendrier de l'overview admin.
+    """
+    calendar = request_json(
+        "GET", session, f"/portfolio/admin/rent-calendar?monthsAhead={months_ahead}",
+    )
+
+    for month in calendar["months"]:
+        remaining = month["totalProjected"] - month["totalPaid"]
+        status = "versé" if remaining <= 0 and month["totalProjected"] > 0 else "à verser"
+        print(
+            f"  - {month['label']}: {format_eur(month['totalProjected'])} projeté, "
+            f"{format_eur(month['totalPaid'])} versé "
+            f"({status}, {len(month['properties'])} bien(s))"
+        )
+
+
+def print_sales_series(session, months_back=6):
+    """Affiche la tendance des ventes de tokens sur les derniers mois — la
+    même donnée que le graphe de ventes de l'overview admin.
+    """
+    series = request_json(
+        "GET", session, f"/crypto/system/sales-series?monthsBack={months_back}",
+    )
+
+    for month in series["months"]:
+        print(
+            f"  - {month['label']}: {format_eur(month['amountRaised'])} levés, "
+            f"{month['tokensSold']} tokens vendus, {month['salesCount']} transaction(s)"
+        )
 
 
 def main():
@@ -484,12 +679,21 @@ def main():
                 print(f"  ERREUR achat {client['email']} / {prop['name']}: {error}")
             time.sleep(0.2)
 
-    print("\n=== Versement de loyer du mois courant (transactions RENT_PAYOUT) ===")
+    print("\n=== Échéancier de loyers admin — AVANT versement ===")
+    print_rent_calendar(session)
+
+    print("\n=== Versement de loyer du mois courant (fiche + transactions RENT_PAYOUT) ===")
     for prop in active_properties:
-        result = pay_current_month_rent(session, prop["id"])
+        result = pay_current_month_rent(session, prop["id"], prop)
         if result:
             print(f"  - {prop['name']}: {result['paid']} versement(s), {result['failed']} échec(s), {result['skipped']} ignoré(s)")
         time.sleep(0.2)
+
+    print("\n=== Échéancier de loyers admin — APRÈS versement ===")
+    print_rent_calendar(session)
+
+    print("\n=== Tendance des ventes de tokens (6 derniers mois) ===")
+    print_sales_series(session)
 
     print("\n=== Résumé ===")
     print(f"Clients prêts : {len(clients)}")

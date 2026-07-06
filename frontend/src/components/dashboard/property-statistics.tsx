@@ -172,7 +172,7 @@ export default function PropertyStatistics({ propertyId }: Props) {
             className={baseStyles.backButton}
             onClick={() => router.push('/?panel=property')}
           >
-            ← Retour aux actifs
+            Retour aux actifs
           </button>
           <div className={baseStyles.headerActions}>
             <button

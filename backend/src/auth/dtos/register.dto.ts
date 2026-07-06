@@ -161,7 +161,8 @@ export class RegisterDto {
   investmentObjective?: string;
 
   @ApiProperty({
-    description: 'The ISO 3166-1 alpha-2 country code used for on-chain compliance',
+    description:
+      'The ISO 3166-1 alpha-2 country code used for on-chain compliance',
     example: 'FR',
     required: false,
   })

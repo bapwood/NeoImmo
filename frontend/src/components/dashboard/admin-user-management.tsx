@@ -381,7 +381,7 @@ export default function AdminUserManagement({ userId }: Props) {
       <section className={styles.surface}>
         <header className={styles.header}>
           <button type="button" className={styles.backButton} onClick={() => router.push('/?panel=user')}>
-            ← Retour aux utilisateurs
+            Retour aux utilisateurs
           </button>
           <div className={styles.headerActions}>
             <button

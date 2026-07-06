@@ -119,6 +119,11 @@ export default function DashboardTopbar({
 
   const handleWalletButtonClick = () => void connectWallet();
 
+  // Un client ne peut être rattaché qu'à une seule wallet (contrainte KYC) :
+  // une fois connectée, on retire le bouton pour éviter toute confusion.
+  // L'admin n'a pas cette contrainte et peut reconnecter/changer librement.
+  const canConnectWallet = isAdmin || !session?.user.walletAddress;
+
   return (
     <header className={styles.topbar}>
       <div className={styles.heading}>
@@ -134,17 +139,6 @@ export default function DashboardTopbar({
                 ? 'Favoris'
                 : activeResource?.label ?? 'Panel'}
         </h2>
-        <p className={styles.copy}>
-          {activePanel === 'overview'
-            ? isAdmin
-              ? 'Vue consolidée des comptes, des actifs et des sessions opérationnelles.'
-              : 'Accès à votre profil, à votre portefeuille et au catalogue d’opportunités disponibles.'
-            : activePanel === 'opportunities'
-              ? 'Ensemble des actifs actuellement publiés à destination des clients.'
-              : activePanel === 'favorites'
-                ? 'Vos biens enregistrés'
-                : activeResource?.description}
-        </p>
       </div>
 
       <div className={styles.actions}>
@@ -178,13 +172,15 @@ export default function DashboardTopbar({
               ? `${account.slice(0, 6)}...${account.slice(-4)}`
               : 'Aucune wallet front active'}
           </div>
-          <button
-            type="button"
-            className={styles.walletButton}
-            onClick={handleWalletButtonClick}
-          >
-            {account ? 'Changer de wallet' : 'Connecter MetaMask'}
-          </button>
+          {canConnectWallet ? (
+            <button
+              type="button"
+              className={styles.walletButton}
+              onClick={handleWalletButtonClick}
+            >
+              {account ? 'Changer de wallet' : 'Connecter MetaMask'}
+            </button>
+          ) : null}
         </div>
 
         <button type="button" className={styles.logoutButton} onClick={onLogout}>
