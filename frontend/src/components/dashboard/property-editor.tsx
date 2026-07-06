@@ -35,6 +35,26 @@ function centsToEuros(cents: number): string {
   return Number.isInteger(euros) ? String(euros) : euros.toFixed(2);
 }
 
+// Indicative only: the rate actually applied on-chain (rent payouts) is
+// BLOCKCHAIN_RENT_WEI_PER_EUR_CENT on the backend. Mirrored here purely to
+// preview an ETH-equivalent while filling the form, not to compute anything sent to the API.
+const WEI_PER_EUR_CENT = Number(
+  process.env.NEXT_PUBLIC_RENT_WEI_PER_EUR_CENT ?? '1000000',
+);
+
+function euroInputToEthPreview(rawValue: string | undefined): string | null {
+  const euros = Number(rawValue);
+
+  if (!rawValue || !Number.isFinite(euros) || euros <= 0) {
+    return null;
+  }
+
+  const wei = BigInt(Math.round(euros * 100)) * BigInt(WEI_PER_EUR_CENT);
+  const eth = Number(wei) / 1e18;
+
+  return `≈ ${eth.toLocaleString('fr-FR', { minimumFractionDigits: 4, maximumFractionDigits: 6 })} ETH`;
+}
+
 function propertyToFormState(property: PropertyRecord): FormState {
   return Object.fromEntries(
     propertyFields.map((field) => {
@@ -539,6 +559,12 @@ export default function PropertyEditor({
                         required={field.required}
                       />
                     )}
+
+                    {field.currency ? (
+                      <small className={styles.helperText}>
+                        {euroInputToEthPreview(formState[field.key]) ?? 'Équivalent ETH indicatif'}
+                      </small>
+                    ) : null}
 
                     {field.helperText ? <small className={styles.helperText}>{field.helperText}</small> : null}
                   </label>
