@@ -37,6 +37,19 @@ export function formatCurrency(cents: number) {
   return `${new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(cents / 100)} €`;
 }
 
+export function formatEth(wei: string | null) {
+  if (wei == null) {
+    return '—';
+  }
+
+  try {
+    const eth = Number(BigInt(wei)) / 1e18;
+    return `${eth.toLocaleString('fr-FR', { minimumFractionDigits: 4, maximumFractionDigits: 4 })} ETH`;
+  } catch {
+    return '—';
+  }
+}
+
 export function formatDate(value: string) {
   const date = new Date(value);
 

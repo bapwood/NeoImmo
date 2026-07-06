@@ -33,6 +33,19 @@ function encodeHexQuantity(value: bigint | string | number) {
   return `0x${normalized.toString(16)}`;
 }
 
+export async function fetchWalletBalance(address: string): Promise<string> {
+  if (typeof window === 'undefined' || !window.ethereum) {
+    return '0';
+  }
+
+  const hex = await window.ethereum.request({
+    method: 'eth_getBalance',
+    params: [address, 'latest'],
+  }) as string;
+
+  return BigInt(hex).toString();
+}
+
 export async function requestWalletAccounts() {
   const provider = getProvider();
   const accounts = await provider.request({

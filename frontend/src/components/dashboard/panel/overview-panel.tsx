@@ -14,11 +14,12 @@ import type {
   TokenSalesSeriesResponse,
   UserRecord,
 } from '@/src/lib/types';
+import { fetchWalletBalance } from '@/src/lib/wallet';
 import OpportunityCard from '../opportunity-card';
 import RentPayoutCalendar from './rent-payout-calendar';
 import RevenueForecastChart from './revenue-forecast-chart';
 import SalesTrendChart from './sales-trend-chart';
-import { formatCurrency } from './utils';
+import { formatCurrency, formatEth } from './utils';
 import type { PanelKey, ResourceState } from './types';
 import styles from './styles/overview-panel.module.css';
 
@@ -73,6 +74,32 @@ export default function DashboardOverviewPanel({
 
   const [rentCalendar, setRentCalendar] = useState<RentCalendarResponse | null>(null);
   const [salesSeries, setSalesSeries] = useState<TokenSalesSeriesResponse | null>(null);
+  const [walletBalanceWei, setWalletBalanceWei] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isAdmin || !user.walletAddress) {
+      setWalletBalanceWei(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    void fetchWalletBalance(user.walletAddress)
+      .then((balance) => {
+        if (!cancelled) {
+          setWalletBalanceWei(balance);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setWalletBalanceWei(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAdmin, user.walletAddress]);
 
   useEffect(() => {
     if (!isAdmin || !session) {
@@ -156,6 +183,13 @@ export default function DashboardOverviewPanel({
                 <strong>{portfolioSummary?.projectedAnnualYieldPercent ?? 0}%</strong>
                 <p>Estimation basée sur vos positions actuelles.</p>
               </article>
+              {user.walletAddress ? (
+                <article className={styles.heroCard}>
+                  <span>Fonds disponibles</span>
+                  <strong>{formatEth(walletBalanceWei)}</strong>
+                  <p>Solde de votre wallet connectée, disponible pour acheter des parts.</p>
+                </article>
+              ) : null}
             </>
           )}
         </div>
