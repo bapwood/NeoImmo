@@ -209,7 +209,7 @@ export default function WalletPanel({ session }: Props) {
         <div className={styles.sectionLabel}>Wallets</div>
         <div className={styles.walletGrid}>
           <div className={styles.walletCard}>
-            <div className={styles.walletRole}>Mon wallet (MetaMask)</div>
+            <div className={styles.walletRole}>wallet admin</div>
             {!adminWalletAddress ? (
               <div className={styles.warningBadge}>Aucun wallet connecté — connecter MetaMask depuis le tableau de bord</div>
             ) : (
