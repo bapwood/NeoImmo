@@ -226,6 +226,113 @@
   word-break: break-word;
 }
 
+.successOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
+  animation: successOverlayFade 220ms ease;
+}
+
+.successCard {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+  text-align: center;
+  max-width: 420px;
+  width: 100%;
+  border-radius: 28px;
+  padding: 2rem 1.75rem;
+  background: rgba(var(--theme-surface-rgb), 0.98);
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.28);
+  animation: successCardPop 340ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.successIcon {
+  font-size: 2.75rem;
+  line-height: 1;
+  animation: successIconBounce 900ms ease 200ms both;
+}
+
+.successTitle {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.successCopy {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.successTxLink {
+  color: var(--accent);
+  font-weight: 700;
+  text-decoration: none;
+  word-break: break-word;
+}
+
+.successTxLink:hover {
+  text-decoration: underline;
+}
+
+.successActions {
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 0.5rem;
+  width: 100%;
+}
+
+@keyframes successOverlayFade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes successCardPop {
+  from {
+    opacity: 0;
+    transform: scale(0.85) translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes successIconBounce {
+  0% {
+    transform: scale(0.4);
+  }
+
+  60% {
+    transform: scale(1.15);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .successOverlay,
+  .successCard,
+  .successIcon {
+    animation: none;
+  }
+}
+
 @media (max-width: 760px) {
   .header {
     flex-direction: column;
@@ -244,6 +351,15 @@
   .disabledButton,
   .secondaryLink,
   .noticeLink {
+    width: 100%;
+  }
+
+  .successActions {
+    flex-direction: column;
+  }
+
+  .successActions .primaryButton,
+  .successActions .secondaryLink {
     width: 100%;
   }
 }

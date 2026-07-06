@@ -58,6 +58,7 @@ export default function ClientPurchasePanel({
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState<NoticeState>(null);
   const [latestTxHash, setLatestTxHash] = useState<string | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const purchaseOpen = isOpportunityOpenForPurchase(property);
   const availabilityLabel = getOpportunityAvailabilityLabel(property);
 
@@ -142,11 +143,8 @@ export default function ClientPurchasePanel({
         session,
       );
 
-      setNotice({
-        tone: 'success',
-        message: 'Achat confirmé et enregistré on-chain.',
-      });
       setLatestTxHash(execution.txHash);
+      setShowSuccessModal(true);
       onPurchaseSuccess?.();
     } catch (error) {
       if (error instanceof ApiError) {
@@ -268,23 +266,48 @@ export default function ClientPurchasePanel({
         </div>
       </div>
 
-      {notice?.tone === 'success' ? (
-        <div className={styles.noticeSuccess}>
-          <span>{notice.message}</span>
-          {latestTxHash ? (
-            <a
-              href={buildExplorerTransactionUrl(latestTxHash)}
-              target="_blank"
-              rel="noreferrer"
-              className={styles.noticeLink}
-            >
-              Voir la transaction
-            </a>
-          ) : null}
-        </div>
-      ) : null}
       {notice?.tone === 'error' ? (
         <div className={styles.noticeError}>{notice.message}</div>
+      ) : null}
+
+      {showSuccessModal ? (
+        <div className={styles.successOverlay} role="dialog" aria-modal="true">
+          <div className={styles.successCard}>
+            <div className={styles.successIcon}>🎉</div>
+            <h3 className={styles.successTitle}>Félicitations !</h3>
+            <p className={styles.successCopy}>
+              Votre achat a bien été signé et envoyé on-chain. Vos parts seront
+              bientôt visibles dans votre portefeuille, le temps que la
+              transaction soit confirmée.
+            </p>
+            {latestTxHash ? (
+              <a
+                href={buildExplorerTransactionUrl(latestTxHash)}
+                target="_blank"
+                rel="noreferrer"
+                className={styles.successTxLink}
+              >
+                Voir la transaction
+              </a>
+            ) : null}
+            <div className={styles.successActions}>
+              <Link
+                href="/?panel=opportunities"
+                className={styles.primaryButton}
+                onClick={() => setShowSuccessModal(false)}
+              >
+                Retour au catalogue
+              </Link>
+              <button
+                type="button"
+                className={styles.secondaryLink}
+                onClick={() => setShowSuccessModal(false)}
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
     </section>
   );
