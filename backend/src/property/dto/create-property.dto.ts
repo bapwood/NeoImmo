@@ -32,7 +32,7 @@ export class CreatePropertyDto {
 
   @ApiPropertyOptional({
     description:
-      'Score de rentabilité du bien (0-100), calculé automatiquement par le backend à partir des variables financières : toute valeur envoyée ici est ignorée.',
+      '',
     minimum: 0,
     maximum: 100,
     example: '82',
