@@ -36,6 +36,8 @@ export interface FieldConfig {
   readOnlyOnEdit?: boolean;
   options?: FieldOption[];
   section?: string;
+  /** Stored in cents in the DB/API; displayed and entered in euros in the form. */
+  currency?: boolean;
 }
 
 export interface ColumnConfig {
@@ -155,27 +157,27 @@ export const propertyFields: FieldConfig[] = [
   { key: 'bathroomNumber', label: 'Salles de bain', kind: 'number', required: true, placeholder: '2', section: 'Présentation' },
 
   { key: 'tokenNumber', label: 'Nombre de tokens', kind: 'number', required: true, placeholder: '100000', section: 'Tokenisation' },
-  { key: 'tokenPrice', label: 'Prix du token (centimes)', kind: 'number', required: true, placeholder: '100', helperText: 'Peut être aligné sur le prix suggéré affiché dans l’analyse financière une fois les données d’acquisition renseignées.', section: 'Tokenisation' },
+  { key: 'tokenPrice', label: 'Prix du token (€)', kind: 'number', required: true, placeholder: '1', currency: true, helperText: 'Peut être aligné sur le prix suggéré affiché dans l’analyse financière une fois les données d’acquisition renseignées.', section: 'Tokenisation' },
 
-  { key: 'purchasePrice', label: "Prix d'achat hors frais (centimes)", kind: 'number', placeholder: '25000000', section: 'Acquisition' },
+  { key: 'purchasePrice', label: "Prix d'achat hors frais (€)", kind: 'number', placeholder: '250000', currency: true, section: 'Acquisition' },
   { key: 'notaryFeesPct', label: 'Frais de notaire (%)', kind: 'number', placeholder: '7.5', section: 'Acquisition' },
   { key: 'agencyFeesPct', label: "Frais d'agence (%)", kind: 'number', placeholder: '4', section: 'Acquisition' },
-  { key: 'diagnosticFees', label: 'Frais de diagnostics (centimes)', kind: 'number', placeholder: '50000', section: 'Acquisition' },
-  { key: 'renovationCost', label: 'Coût des travaux (centimes)', kind: 'number', placeholder: '1500000', section: 'Acquisition' },
-  { key: 'furnitureCost', label: 'Coût du mobilier (centimes)', kind: 'number', placeholder: '300000', section: 'Acquisition' },
+  { key: 'diagnosticFees', label: 'Frais de diagnostics (€)', kind: 'number', placeholder: '500', currency: true, section: 'Acquisition' },
+  { key: 'renovationCost', label: 'Coût des travaux (€)', kind: 'number', placeholder: '15000', currency: true, section: 'Acquisition' },
+  { key: 'furnitureCost', label: 'Coût du mobilier (€)', kind: 'number', placeholder: '3000', currency: true, section: 'Acquisition' },
 
-  { key: 'platformEquity', label: 'Apport en fonds propres plateforme (centimes)', kind: 'number', placeholder: '0', section: 'Financement' },
-  { key: 'loanAmount', label: 'Montant emprunt bancaire (centimes)', kind: 'number', placeholder: '0', section: 'Financement' },
+  { key: 'platformEquity', label: 'Apport en fonds propres plateforme (€)', kind: 'number', placeholder: '0', currency: true, section: 'Financement' },
+  { key: 'loanAmount', label: 'Montant emprunt bancaire (€)', kind: 'number', placeholder: '0', currency: true, section: 'Financement' },
   { key: 'loanRatePct', label: "Taux d'intérêt emprunt (%)", kind: 'number', placeholder: '3.5', section: 'Financement' },
   { key: 'loanDurationYears', label: "Durée de l'emprunt (années)", kind: 'number', placeholder: '15', section: 'Financement' },
 
-  { key: 'monthlyRent', label: 'Loyer mensuel prévisionnel (centimes)', kind: 'number', placeholder: '120000', section: 'Revenus locatifs' },
+  { key: 'monthlyRent', label: 'Loyer mensuel prévisionnel (€)', kind: 'number', placeholder: '1200', currency: true, section: 'Revenus locatifs' },
   { key: 'occupancyRatePct', label: "Taux d'occupation prévisionnel (%)", kind: 'number', placeholder: '95', section: 'Revenus locatifs' },
   { key: 'rentType', label: 'Type de location', kind: 'text', placeholder: 'Nue, meublée, saisonnière...', section: 'Revenus locatifs' },
 
-  { key: 'nonRecoverableCharges', label: 'Charges copropriété non récupérables (centimes/an)', kind: 'number', placeholder: '80000', section: 'Charges d’exploitation' },
-  { key: 'propertyTax', label: 'Taxe foncière (centimes/an)', kind: 'number', placeholder: '120000', section: 'Charges d’exploitation' },
-  { key: 'insurancePnoAnnual', label: 'Assurance PNO (centimes/an)', kind: 'number', placeholder: '15000', section: 'Charges d’exploitation' },
+  { key: 'nonRecoverableCharges', label: 'Charges copropriété non récupérables (€/an)', kind: 'number', placeholder: '800', currency: true, section: 'Charges d’exploitation' },
+  { key: 'propertyTax', label: 'Taxe foncière (€/an)', kind: 'number', placeholder: '1200', currency: true, section: 'Charges d’exploitation' },
+  { key: 'insurancePnoAnnual', label: 'Assurance PNO (€/an)', kind: 'number', placeholder: '150', currency: true, section: 'Charges d’exploitation' },
   { key: 'insuranceGliPct', label: 'Assurance loyers impayés (% du loyer)', kind: 'number', placeholder: '3', section: 'Charges d’exploitation' },
   { key: 'managementFeePct', label: 'Frais de gestion locative (% du loyer)', kind: 'number', placeholder: '7', section: 'Charges d’exploitation' },
   { key: 'maintenanceProvisionPct', label: 'Provision entretien (% du loyer)', kind: 'number', placeholder: '3', section: 'Charges d’exploitation' },

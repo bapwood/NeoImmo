@@ -30,6 +30,11 @@ function buildEmptyForm(): FormState {
   return Object.fromEntries(propertyFields.map((field) => [field.key, '']));
 }
 
+function centsToEuros(cents: number): string {
+  const euros = cents / 100;
+  return Number.isInteger(euros) ? String(euros) : euros.toFixed(2);
+}
+
 function propertyToFormState(property: PropertyRecord): FormState {
   return Object.fromEntries(
     propertyFields.map((field) => {
@@ -37,6 +42,10 @@ function propertyToFormState(property: PropertyRecord): FormState {
 
       if (Array.isArray(value)) {
         return [field.key, value.join('\n')];
+      }
+
+      if (field.currency && typeof value === 'number') {
+        return [field.key, centsToEuros(value)];
       }
 
       return [field.key, value == null ? '' : String(value)];
@@ -56,7 +65,8 @@ function normalizeFieldValue(field: FieldConfig, rawValue: string) {
       return field.required ? 0 : undefined;
     }
 
-    return Number(trimmedValue);
+    const numericValue = Number(trimmedValue);
+    return field.currency ? Math.round(numericValue * 100) : numericValue;
   }
 
   if (field.kind === 'array') {
@@ -339,7 +349,7 @@ export default function PropertyEditor({
     roomNumber: parseNumberValue(formState.roomNumber, 0),
     bathroomNumber: parseNumberValue(formState.bathroomNumber, 0),
     tokenNumber: parseNumberValue(formState.tokenNumber, 0),
-    tokenPrice: parseNumberValue(formState.tokenPrice, 0),
+    tokenPrice: Math.round(parseNumberValue(formState.tokenPrice, 0) * 100),
     images: imagePreviewUrls,
     keyPoints: keyPointPreview,
   };
@@ -374,15 +384,13 @@ export default function PropertyEditor({
               <div className={styles.eyebrow}>Formulaire</div>
               <h3>{mode === 'edit' ? 'Édition de l’actif' : 'Création de l’actif'}</h3>
               <p className={styles.sectionCopy}>
-                Tous les champs ci-dessous alimentent directement la présentation
-                du bien dans l’interface.
               </p>
             </div>
             <div className={styles.eyebrow}>
               Score de rentabilité :{' '}
               {mode === 'edit' && computedScore != null
                 ? `${computedScore}/100`
-                : 'calculé automatiquement à l’enregistrement, à partir des variables de rentabilité'}
+                : ''}
             </div>
           </div>
 
