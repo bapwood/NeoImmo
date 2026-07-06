@@ -370,9 +370,12 @@ export default function PropertyEditor({
             Retour aux actifs
           </Link>
           <Link href="/" className={styles.dashboardLink} aria-label="Retour au tableau de bord">
-            <span className={styles.dashboardLogo} aria-hidden="true">
-              N
-            </span>
+            <img
+              src="/NeoImmo_logo_nobg.png"
+              alt=""
+              aria-hidden="true"
+              className={styles.dashboardLogo}
+            />
           </Link>
         </div>
       </header>

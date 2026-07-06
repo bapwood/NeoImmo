@@ -82,14 +82,16 @@
   place-items: center;
   width: 44px;
   height: 44px;
+  padding: 6px;
   border-radius: 16px;
-  background: linear-gradient(135deg, var(--accent), rgba(var(--theme-primary-rgb), 0.82));
-  color: white;
-  font-family: var(--landing-font-display), var(--font-sans);
-  font-size: 1rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
+  background: rgba(255, 255, 255, 0.92);
   box-shadow: var(--shadow-soft);
+}
+
+.brandMark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .brandCopy strong {

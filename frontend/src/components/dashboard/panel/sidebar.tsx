@@ -42,7 +42,9 @@ export default function DashboardSidebar({
 
       <aside className={`${styles.sidebar} ${open ? styles.sidebarOpen : ''}`}>
         <div className={styles.brandLockup}>
-          <div className={styles.brandIcon}>N</div>
+          <div className={styles.brandIcon}>
+            <img src="/NeoImmo_logo_nobg.png" alt="NeoImmo" />
+          </div>
           <div className={styles.brandCopy}>
             <div className={styles.eyebrow}>NeoImmo</div>
             <h1 className={styles.brandTitle}>Plateforme</h1>

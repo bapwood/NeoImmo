@@ -376,7 +376,9 @@ export default function LandingPage({ onAuthenticated }: LandingPageProps) {
           transition={{ duration: 1, delay: 0.2 }}
         >
           <div className={styles.brand}>
-            <div className={styles.brandMark}>NI</div>
+            <div className={styles.brandMark}>
+            <img src="/NeoImmo_logo_nobg.png" alt="NeoImmo" />
+          </div>
             <div className={styles.brandCopy}>
               <strong>NeoImmo</strong>
               <span>Investir, petit à petit.</span>

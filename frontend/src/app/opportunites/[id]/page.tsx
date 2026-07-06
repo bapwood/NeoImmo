@@ -242,9 +242,12 @@ export default function OpportunityDetailPage() {
             aria-label="Retour au tableau de bord"
             title="Retour au tableau de bord"
           >
-            <span className={styles.dashboardLogo} aria-hidden="true">
-              N
-            </span>
+            <img
+              src="/NeoImmo_logo_nobg.png"
+              alt=""
+              aria-hidden="true"
+              className={styles.dashboardLogo}
+            />
           </Link>
         </div>
       </div>
