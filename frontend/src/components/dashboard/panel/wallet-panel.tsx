@@ -236,14 +236,14 @@ export default function WalletPanel({ session }: Props) {
                   </button>
                 </div>
                 {adminBalanceWei !== null && Number(BigInt(adminBalanceWei)) / 1e18 < 0.05 && (
-                  <div className={styles.warningBadge}>Solde faible — recharger via faucet</div>
+                  <div className={styles.warningBadge}>Solde faible — recharger</div>
                 )}
               </>
             )}
           </div>
 
           <div className={styles.walletCard}>
-            <div className={styles.walletRole}>Treasury (inventaire tokens)</div>
+            <div className={styles.walletRole}>Treasury</div>
             <div className={styles.walletBalance}>
               {blockchain.error ? '—' : formatEth(wallets.treasury.balanceWei)}
             </div>
@@ -301,8 +301,6 @@ export default function WalletPanel({ session }: Props) {
                   </li>
                 </ul>
                 <p className={styles.fundingEstimateNote}>
-                  Estimation indicative (loyers du treasury + gas estimé pour les syncs KYC
-                  et déploiements/mints en attente, côté backend operator).
                 </p>
               </div>
             )}
@@ -385,7 +383,7 @@ export default function WalletPanel({ session }: Props) {
 
       {/* Properties inventory */}
       <section>
-        <div className={styles.sectionLabel}>Inventaire des biens tokenisés</div>
+        <div className={styles.sectionLabel}>Inventaire des biens</div>
         {properties.length === 0 ? (
           <div className={styles.empty}>
             Aucun bien déployé ou actif pour le moment.
