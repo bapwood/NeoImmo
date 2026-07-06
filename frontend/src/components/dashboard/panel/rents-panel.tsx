@@ -215,11 +215,11 @@ export default function RentsPanel({ session, properties }: Props) {
         <>
           <section className={styles.summaryGrid}>
             <div className={styles.summaryCard}>
-              <span>Versé (sélection)</span>
+              <span>Versé</span>
               <strong className={styles.positive}>{formatEur(data.summary.paid)}</strong>
             </div>
             <div className={styles.summaryCard}>
-              <span>Reste à verser (sélection)</span>
+              <span>Reste à verser</span>
               <strong className={data.summary.projected > 0 ? styles.warning : styles.positive}>
                 {formatEur(data.summary.projected)}
               </strong>
@@ -244,7 +244,7 @@ export default function RentsPanel({ session, properties }: Props) {
           ) : null}
 
           <section>
-            <div className={styles.sectionTitle}>Ce qu&apos;il reste à payer, bien par bien</div>
+            <div className={styles.sectionTitle}>Reste à payer :</div>
             {propertyGroups.length === 0 ? (
               <div className={styles.empty}>Aucun loyer pour ces filtres.</div>
             ) : (
@@ -305,7 +305,7 @@ export default function RentsPanel({ session, properties }: Props) {
           </section>
 
           <section>
-            <div className={styles.sectionTitle}>Détail par client</div>
+            <div className={styles.sectionTitle}>Détail :</div>
             {data.records.length === 0 ? (
               <div className={styles.empty}>Aucun versement de loyer pour ces filtres.</div>
             ) : (

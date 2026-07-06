@@ -664,7 +664,7 @@ export default function PropertyTokenization({
                   <div>
                     <div className={styles.panelEyebrow}>Étape 1</div>
                     <h2 className={styles.panelTitle}>
-                      {step1Done ? '✓ Contrat déployé' : 'Déployer le contrat'}
+                      {step1Done ? 'Contrat déployé' : 'Déployer le contrat'}
                     </h2>
                   </div>
                   {step1Done && propertyRecord.contractAddress && (
@@ -685,7 +685,7 @@ export default function PropertyTokenization({
                     <div className={styles.actionBlock}>
                       <div className={styles.actionCopy}>
                         <h3 className={styles.actionTitle}>
-                          {fundingReady ? '✓ Wallet backend financée' : '1a — Financer la wallet backend'}
+                          {fundingReady ? 'Wallet backend financée' : '1a Financer la wallet backend'}
                         </h3>
                         {!fundingReady && (
                           <p className={styles.actionText}>
@@ -779,7 +779,7 @@ export default function PropertyTokenization({
                     <div className={styles.panelEyebrow}>Étape 2</div>
                     <h2 className={styles.panelTitle}>
                       {tokenizedAndActive
-                        ? '✓ Bien en vente'
+                        ? 'Bien en vente'
                         : purchasePaused
                           ? 'Vente suspendue'
                           : 'Mettre en vente'}
