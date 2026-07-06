@@ -495,7 +495,15 @@ def ensure_deployed_and_active(session, property_id, property_name):
         status = "DEPLOYED"
 
     if status == "DEPLOYED":
-        request_json("POST", session, f"/crypto/properties/{property_id}/mint", {})
+        try:
+            request_json("POST", session, f"/crypto/properties/{property_id}/mint", {})
+        except RuntimeError:
+            # Le mint peut avoir réellement réussi on-chain même si la requête a
+            # fini par timeout côté client (confirmation Sepolia lente) : on
+            # revérifie l'état réel avant de déclarer un échec.
+            state = request_json("GET", session, f"/crypto/properties/{property_id}/state")
+            if state["property"]["tokenizationStatus"] != "ACTIVE":
+                raise
         print(f"    {property_name}: inventaire minté, bien actif.")
         status = "ACTIVE"
 
