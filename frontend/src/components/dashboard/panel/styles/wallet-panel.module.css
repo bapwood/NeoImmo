@@ -240,6 +240,65 @@
   color: #d97706;
 }
 
+/* Funding estimate */
+.fundingEstimate {
+  border-radius: 16px;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(var(--theme-primary-rgb), 0.12);
+  background: rgba(var(--theme-primary-rgb), 0.04);
+  display: grid;
+  gap: 0.5rem;
+}
+
+.fundingEstimateHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.fundingEstimateHeader strong {
+  font-size: 1rem;
+  color: var(--foreground);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.fundingEstimateList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.82rem;
+}
+
+.fundingEstimateList li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: var(--muted);
+}
+
+.fundingEstimateList li span:last-child {
+  color: var(--foreground);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.fundingEstimateNote {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
 /* Fund row */
 .fundRow {
   display: flex;

@@ -331,6 +331,17 @@ export class BlockchainService {
         }),
       ]);
 
+    const remainingRentCents = Math.max(
+      0,
+      (projectedThisMonthAgg._sum.amount ?? 0) -
+        (paidThisMonthAgg._sum.amount ?? 0),
+    );
+
+    const fundingEstimate = await this.getMonthlyFundingEstimate(
+      remainingRentCents,
+      blockchainError,
+    );
+
     return {
       wallets: {
         backendOperator: {
@@ -355,7 +366,151 @@ export class BlockchainService {
           projected: projectedThisMonthAgg._sum.amount ?? 0,
         },
       },
+      fundingEstimate,
     };
+  }
+
+  private async getMonthlyFundingEstimate(
+    remainingRentCents: number,
+    existingBlockchainError: string | null,
+  ) {
+    const rentWei = this.rentCentsToWei(remainingRentCents);
+
+    if (!this.isBlockchainEnabled() || existingBlockchainError) {
+      return {
+        rent: { remainingCents: remainingRentCents, estimatedWei: rentWei.toString() },
+        kycSync: { pendingCount: 0, estimatedWei: '0' },
+        deployment: { pendingCount: 0, estimatedWei: '0' },
+        totalWei: rentWei.toString(),
+        error: existingBlockchainError,
+      };
+    }
+
+    try {
+      const provider = this.getProvider();
+      const contracts = await this.resolveContractAddresses();
+      const feeData = await provider.getFeeData();
+      const gasPrice =
+        feeData.maxFeePerGas ?? feeData.gasPrice ?? parseUnits('2', 'gwei');
+
+      const pendingKycUsers = await this.prisma.user.findMany({
+        where: {
+          role: 'CLIENT',
+          walletAddress: { not: null },
+          countryCode: { not: null },
+          kycSyncedAt: null,
+        },
+        select: { walletAddress: true, countryCode: true },
+      });
+
+      let kycSyncEstimatedWei = BigInt(0);
+      if (pendingKycUsers.length > 0) {
+        const kycRegistry = new Contract(
+          contracts.kycRegistry,
+          KYC_REGISTRY_ABI,
+          this.getBackendSigner(),
+        );
+        const sample = pendingKycUsers[0];
+        let gasPerSync: bigint;
+        try {
+          const [allowGas, countryGas] = await Promise.all([
+            kycRegistry
+              .getFunction('setAllowed')
+              .estimateGas(sample.walletAddress, true),
+            kycRegistry
+              .getFunction('setCountry')
+              .estimateGas(
+                sample.walletAddress,
+                this.countryCodeToBytes2(sample.countryCode as string),
+              ),
+          ]);
+          gasPerSync = allowGas + countryGas;
+        } catch {
+          gasPerSync = BigInt(120_000);
+        }
+        kycSyncEstimatedWei =
+          gasPerSync * gasPrice * BigInt(pendingKycUsers.length);
+      }
+
+      const draftProperties = await this.prisma.property.findMany({
+        where: { tokenizationStatus: TokenizationStatus.DRAFT },
+        include: { keyPoints: true },
+      });
+      const deployedNotMinted = await this.prisma.property.findMany({
+        where: { tokenizationStatus: TokenizationStatus.DEPLOYED },
+        select: { contractAddress: true, tokenNumber: true, tokenDecimals: true },
+      });
+
+      let deployGasPerProperty = BigInt(3_500_000);
+      if (draftProperties.length > 0) {
+        try {
+          const snapshot = await this.getPropertyDeploymentFundingSnapshot(
+            draftProperties[0],
+          );
+          if (snapshot.estimatedGasUnits) {
+            deployGasPerProperty = BigInt(snapshot.estimatedGasUnits);
+          }
+        } catch {
+          // keep fallback
+        }
+      }
+
+      let mintGasPerProperty = BigInt(120_000);
+      const sampleDeployed = deployedNotMinted.find((p) => p.contractAddress);
+      if (sampleDeployed?.contractAddress) {
+        try {
+          const tokenContract = new Contract(
+            sampleDeployed.contractAddress,
+            PROPERTY_SHARES_ABI,
+            this.getBackendSigner(),
+          );
+          const treasuryWallet = this.getTreasuryWallet();
+          const parsedAmount = parseUnits(
+            String(sampleDeployed.tokenNumber),
+            sampleDeployed.tokenDecimals,
+          );
+          mintGasPerProperty = await tokenContract
+            .getFunction('mint')
+            .estimateGas(treasuryWallet.address, parsedAmount);
+        } catch {
+          // keep fallback
+        }
+      }
+
+      const deploymentPendingCount =
+        draftProperties.length + deployedNotMinted.length;
+      const deploymentEstimatedWei =
+        BigInt(draftProperties.length) * deployGasPerProperty * gasPrice +
+        BigInt(deployedNotMinted.length) * mintGasPerProperty * gasPrice;
+
+      const totalWei =
+        rentWei + kycSyncEstimatedWei + deploymentEstimatedWei;
+
+      return {
+        rent: { remainingCents: remainingRentCents, estimatedWei: rentWei.toString() },
+        kycSync: {
+          pendingCount: pendingKycUsers.length,
+          estimatedWei: kycSyncEstimatedWei.toString(),
+        },
+        deployment: {
+          pendingCount: deploymentPendingCount,
+          estimatedWei: deploymentEstimatedWei.toString(),
+        },
+        totalWei: totalWei.toString(),
+        error: null,
+      };
+    } catch (error) {
+      return {
+        rent: { remainingCents: remainingRentCents, estimatedWei: rentWei.toString() },
+        kycSync: { pendingCount: 0, estimatedWei: '0' },
+        deployment: { pendingCount: 0, estimatedWei: '0' },
+        totalWei: rentWei.toString(),
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Estimation du besoin de financement impossible.',
+      };
+    }
   }
 
   async getTokenSalesSeries(monthsBack = 6) {

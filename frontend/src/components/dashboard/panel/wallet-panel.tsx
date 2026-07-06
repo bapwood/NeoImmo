@@ -42,6 +42,13 @@ type SystemOverview = {
       projected: number;
     };
   };
+  fundingEstimate: {
+    rent: { remainingCents: number; estimatedWei: string };
+    kycSync: { pendingCount: number; estimatedWei: string };
+    deployment: { pendingCount: number; estimatedWei: string };
+    totalWei: string;
+    error: string | null;
+  };
 };
 
 function formatEth(wei: string): string {
@@ -258,6 +265,47 @@ export default function WalletPanel({ session }: Props) {
                 Copier
               </button>
             </div>
+
+            {overview.fundingEstimate.error ? (
+              <div className={styles.warningBadge}>
+                Estimation du besoin indisponible : {overview.fundingEstimate.error}
+              </div>
+            ) : (
+              <div className={styles.fundingEstimate}>
+                <div className={styles.fundingEstimateHeader}>
+                  <span>Besoin estimé ce mois-ci</span>
+                  <strong>{formatEth(overview.fundingEstimate.totalWei)}</strong>
+                </div>
+                <ul className={styles.fundingEstimateList}>
+                  <li>
+                    <span>Loyers restant à verser</span>
+                    <span>{formatEth(overview.fundingEstimate.rent.estimatedWei)}</span>
+                  </li>
+                  <li>
+                    <span>
+                      Sync KYC en attente
+                      {overview.fundingEstimate.kycSync.pendingCount > 0
+                        ? ` (${overview.fundingEstimate.kycSync.pendingCount})`
+                        : ''}
+                    </span>
+                    <span>{formatEth(overview.fundingEstimate.kycSync.estimatedWei)}</span>
+                  </li>
+                  <li>
+                    <span>
+                      Déploiements/mints en attente
+                      {overview.fundingEstimate.deployment.pendingCount > 0
+                        ? ` (${overview.fundingEstimate.deployment.pendingCount})`
+                        : ''}
+                    </span>
+                    <span>{formatEth(overview.fundingEstimate.deployment.estimatedWei)}</span>
+                  </li>
+                </ul>
+                <p className={styles.fundingEstimateNote}>
+                  Estimation indicative (loyers du treasury + gas estimé pour les syncs KYC
+                  et déploiements/mints en attente, côté backend operator).
+                </p>
+              </div>
+            )}
 
             <div className={styles.fundRow}>
               <input
