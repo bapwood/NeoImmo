@@ -38,7 +38,53 @@ export interface FieldConfig {
   section?: string;
   /** Stored in cents in the DB/API; displayed and entered in euros in the form. */
   currency?: boolean;
+  /** For select fields: add an "Autre" option that reveals a free-text input. */
+  allowOther?: boolean;
 }
+
+export const COUNTRY_OPTIONS: FieldOption[] = [
+  'France',
+  'Belgique',
+  'Suisse',
+  'Luxembourg',
+  'Allemagne',
+  'Espagne',
+  'Italie',
+  'Portugal',
+  'Royaume-Uni',
+  'Pays-Bas',
+  'Canada',
+  'États-Unis',
+].map((label) => ({ label, value: label }));
+
+export const NATIONALITY_OPTIONS: FieldOption[] = [
+  'Française',
+  'Belge',
+  'Suisse',
+  'Luxembourgeoise',
+  'Allemande',
+  'Espagnole',
+  'Italienne',
+  'Portugaise',
+  'Britannique',
+  'Néerlandaise',
+  'Canadienne',
+  'Américaine',
+].map((label) => ({ label, value: label }));
+
+export const OCCUPATION_OPTIONS: FieldOption[] = [
+  'Salarié(e)',
+  'Cadre',
+  'Profession libérale',
+  'Indépendant(e) / Entrepreneur(e)',
+  'Fonctionnaire',
+  'Enseignant(e)',
+  'Ingénieur(e)',
+  'Commerçant(e) / Artisan(e)',
+  'Retraité(e)',
+  'Étudiant(e)',
+  'Sans emploi',
+].map((label) => ({ label, value: label }));
 
 export interface ColumnConfig {
   key: string;
@@ -93,12 +139,24 @@ const userProfileFields: FieldConfig[] = [
   { key: 'address', label: 'Adresse', kind: 'text', placeholder: '14 rue des Archives' },
   { key: 'postalCode', label: 'Code postal', kind: 'text', placeholder: '75004' },
   { key: 'city', label: 'Ville', kind: 'text', placeholder: 'Paris' },
-  { key: 'country', label: 'Pays de résidence', kind: 'text', placeholder: 'France' },
+  {
+    key: 'country',
+    label: 'Pays de résidence',
+    kind: 'select',
+    options: COUNTRY_OPTIONS,
+    allowOther: true,
+  },
   { key: 'day', label: 'Jour', kind: 'text', placeholder: '09' },
   { key: 'month', label: 'Mois', kind: 'text', placeholder: '07' },
   { key: 'year', label: 'Année', kind: 'text', placeholder: '1996' },
   { key: 'birthPlace', label: 'Lieu de naissance', kind: 'text', placeholder: 'Lyon' },
-  { key: 'nationality', label: 'Nationalité', kind: 'text', placeholder: 'Française' },
+  {
+    key: 'nationality',
+    label: 'Nationalité',
+    kind: 'select',
+    options: NATIONALITY_OPTIONS,
+    allowOther: true,
+  },
   { key: 'number', label: 'Téléphone', kind: 'text', placeholder: '+33 6 12 34 56 78' },
   {
     key: 'walletAddress',
@@ -114,12 +172,19 @@ const userProfileFields: FieldConfig[] = [
     placeholder: 'FR',
     helperText: 'Code alpha-2 utilisé pour les contrôles de conformité on-chain.',
   },
-  { key: 'occupation', label: 'Profession', kind: 'text', placeholder: 'Consultant' },
+  {
+    key: 'occupation',
+    label: 'Profession',
+    kind: 'select',
+    options: OCCUPATION_OPTIONS,
+    allowOther: true,
+  },
   {
     key: 'taxResidence',
     label: 'Résidence fiscale',
-    kind: 'text',
-    placeholder: 'France',
+    kind: 'select',
+    options: COUNTRY_OPTIONS,
+    allowOther: true,
     helperText: 'Information utile pour les futurs parcours de conformité et de fiscalité.',
   },
   {

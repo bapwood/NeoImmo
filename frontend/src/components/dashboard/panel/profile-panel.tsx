@@ -116,6 +116,79 @@ function normalizeFieldValue(field: FieldConfig, rawValue: string) {
   return field.kind === 'select' ? trimmedValue : trimmedValue;
 }
 
+function composeBirthDate(formState: FormState): string {
+  const { day, month, year } = formState;
+
+  if (!day?.trim() || !month?.trim() || !year?.trim()) {
+    return '';
+  }
+
+  return `${year.padStart(4, '0')}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+}
+
+function decomposeBirthDate(value: string): Pick<FormState, 'day' | 'month' | 'year'> {
+  const [year, month, day] = value.split('-');
+  return { day: day ?? '', month: month ?? '', year: year ?? '' };
+}
+
+type SelectOrOtherFieldProps = {
+  field: FieldConfig;
+  value: string;
+  onChange: (value: string) => void;
+  disabled: boolean;
+};
+
+const OTHER_SENTINEL = '__other__';
+
+function SelectOrOtherField({ field, value, onChange, disabled }: SelectOrOtherFieldProps) {
+  const options = field.options ?? [];
+  const matchesOption = options.some((option) => option.value === value);
+  const [otherMode, setOtherMode] = useState(
+    Boolean(field.allowOther) && value !== '' && !matchesOption,
+  );
+
+  useEffect(() => {
+    setOtherMode(Boolean(field.allowOther) && value !== '' && !matchesOption);
+  }, [value, matchesOption, field.allowOther]);
+
+  return (
+    <>
+      <select
+        name={field.key}
+        value={otherMode ? OTHER_SENTINEL : value}
+        onChange={(event) => {
+          if (event.target.value === OTHER_SENTINEL) {
+            setOtherMode(true);
+            onChange('');
+          } else {
+            setOtherMode(false);
+            onChange(event.target.value);
+          }
+        }}
+        required={field.required}
+        disabled={disabled}
+      >
+        <option value="">Sélectionner</option>
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+        {field.allowOther ? <option value={OTHER_SENTINEL}>Autre</option> : null}
+      </select>
+      {otherMode ? (
+        <input
+          type="text"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder="Précisez..."
+          disabled={disabled}
+        />
+      ) : null}
+    </>
+  );
+}
+
 export default function DashboardProfilePanel({
   resource,
   session,
@@ -335,52 +408,11 @@ export default function DashboardProfilePanel({
                           Connectez MetaMask depuis la barre en haut — l&apos;adresse est automatiquement sauvegardée.
                         </small>
                       </div>
-                      {sectionFields.filter(f => f.key !== 'walletAddress').map((field) => (
-                        <label key={field.key} className={styles.field}>
-                          <span>{field.label}{field.required ? ' *' : ''}</span>
-                          <input
-                            name={field.key}
-                            type={inputTypeFor(field)}
-                            value={formState[field.key] ?? ''}
-                            onChange={handleInputChange}
-                            placeholder={field.placeholder}
-                            required={field.required}
-                            disabled={!canModify}
-                          />
-                          {field.helperText ? <small>{field.helperText}</small> : null}
-                        </label>
-                      ))}
-                    </div>
-                  ) : (
-                  <div className={styles.fieldsGrid}>
-                    {sectionFields.map((field) => {
-                      const isFullWidth =
-                        field.key === 'address' || field.key === 'password';
-                      const fieldClassName = isFullWidth ? styles.fieldFull : styles.field;
-
-                      return (
-                        <label key={field.key} className={fieldClassName}>
-                          <span>
-                            {field.label}
-                            {field.required ? ' *' : ''}
-                          </span>
-
-                          {field.kind === 'select' ? (
-                            <select
-                              name={field.key}
-                              value={formState[field.key] ?? ''}
-                              onChange={handleInputChange}
-                              required={field.required}
-                              disabled={!canModify}
-                            >
-                              <option value="">Sélectionner</option>
-                              {field.options?.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
-                          ) : (
+                      {sectionFields
+                        .filter((f) => f.key !== 'walletAddress')
+                        .map((field) => (
+                          <label key={field.key} className={styles.field}>
+                            <span>{field.label}{field.required ? ' *' : ''}</span>
                             <input
                               name={field.key}
                               type={inputTypeFor(field)}
@@ -390,12 +422,66 @@ export default function DashboardProfilePanel({
                               required={field.required}
                               disabled={!canModify}
                             />
-                          )}
+                            {field.helperText ? <small>{field.helperText}</small> : null}
+                          </label>
+                        ))}
+                    </div>
+                  ) : (
+                  <div className={styles.fieldsGrid}>
+                    {section.key === 'identity' ? (
+                      <label className={styles.field}>
+                        <span>Date de naissance</span>
+                        <input
+                          type="date"
+                          value={composeBirthDate(formState)}
+                          onChange={(event) => {
+                            const parts = decomposeBirthDate(event.target.value);
+                            setFormState((current) => ({ ...current, ...parts }));
+                          }}
+                          disabled={!canModify}
+                        />
+                      </label>
+                    ) : null}
 
-                          {field.helperText ? <small>{field.helperText}</small> : null}
-                        </label>
-                      );
-                    })}
+                    {sectionFields
+                      .filter((field) => !['day', 'month', 'year'].includes(field.key))
+                      .map((field) => {
+                        const isFullWidth =
+                          field.key === 'address' || field.key === 'password';
+                        const fieldClassName = isFullWidth ? styles.fieldFull : styles.field;
+
+                        return (
+                          <label key={field.key} className={fieldClassName}>
+                            <span>
+                              {field.label}
+                              {field.required ? ' *' : ''}
+                            </span>
+
+                            {field.kind === 'select' ? (
+                              <SelectOrOtherField
+                                field={field}
+                                value={formState[field.key] ?? ''}
+                                onChange={(value) =>
+                                  setFormState((current) => ({ ...current, [field.key]: value }))
+                                }
+                                disabled={!canModify}
+                              />
+                            ) : (
+                              <input
+                                name={field.key}
+                                type={inputTypeFor(field)}
+                                value={formState[field.key] ?? ''}
+                                onChange={handleInputChange}
+                                placeholder={field.placeholder}
+                                required={field.required}
+                                disabled={!canModify}
+                              />
+                            )}
+
+                            {field.helperText ? <small>{field.helperText}</small> : null}
+                          </label>
+                        );
+                      })}
                   </div>
                   )}
                 </section>
