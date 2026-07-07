@@ -96,6 +96,24 @@
   align-items: flex-start;
 }
 
+.kycBanner {
+  border-radius: 20px;
+  padding: 1rem 1.2rem;
+  background: rgba(217, 119, 6, 0.1);
+  border: 1px solid rgba(217, 119, 6, 0.2);
+}
+
+.kycBanner strong {
+  display: block;
+  color: #92400e;
+}
+
+.kycBanner p {
+  margin: 0.3rem 0 0;
+  color: #92400e;
+  line-height: 1.5;
+}
+
 .identity {
   display: flex;
   gap: 1rem;

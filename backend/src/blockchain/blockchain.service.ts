@@ -2270,6 +2270,12 @@ export class BlockchainService {
       throw new BadRequestException('Le code pays ISO du client est manquant.');
     }
 
+    if (user.walletStatus !== WalletStatus.VERIFIED || !user.kycSyncedAt) {
+      throw new BadRequestException(
+        'Votre KYC doit être validé par un administrateur avant de pouvoir acheter des parts.',
+      );
+    }
+
     if (!property.contractAddress) {
       throw new BadRequestException(
         'Le bien n’est pas encore déployé on-chain.',

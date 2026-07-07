@@ -61,6 +61,7 @@ export default function ClientPurchasePanel({
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const purchaseOpen = isOpportunityOpenForPurchase(property);
   const availabilityLabel = getOpportunityAvailabilityLabel(property);
+  const kycVerified = session?.user.walletStatus === 'VERIFIED';
 
   const total = useMemo(() => {
     const amount = Number(quantity);
@@ -85,6 +86,14 @@ export default function ClientPurchasePanel({
       setNotice({
         tone: 'error',
         message: 'Ajoutez votre wallet principale dans Mon compte avant de signer un achat.',
+      });
+      return;
+    }
+
+    if (!kycVerified) {
+      setNotice({
+        tone: 'error',
+        message: 'Votre KYC doit être validé par un administrateur avant de pouvoir acheter des parts.',
       });
       return;
     }
@@ -228,14 +237,19 @@ export default function ClientPurchasePanel({
             </Link>
             .
           </div>
+        ) : !kycVerified ? (
+          <div className={styles.inlineWarning}>
+            Compte en attente de validation KYC par un administrateur — vous
+            pourrez acheter des parts une fois votre compte validé.
+          </div>
         ) : null}
 
         <div className={styles.actions}>
           <button
             type="button"
-            className={purchaseOpen ? styles.primaryButton : styles.disabledButton}
+            className={purchaseOpen && kycVerified ? styles.primaryButton : styles.disabledButton}
             onClick={() => void handlePurchase()}
-            disabled={loading || !purchaseOpen}
+            disabled={loading || !purchaseOpen || !kycVerified}
           >
             {loading ? 'Signature en cours...' : 'Acheter maintenant'}
           </button>

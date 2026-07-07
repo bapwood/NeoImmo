@@ -241,6 +241,18 @@ export default function DashboardProfilePanel({
           </div>
         </div>
 
+        {session.user.role === 'CLIENT' && user.walletStatus !== 'VERIFIED' ? (
+          <div className={styles.kycBanner}>
+            <strong>Compte en attente de validation</strong>
+            <p>
+              Votre KYC doit encore être validé par un administrateur avant de
+              pouvoir acheter des parts. Complétez votre profil ci-dessous si
+              ce n’est pas déjà fait — vous serez notifié une fois votre
+              compte validé.
+            </p>
+          </div>
+        ) : null}
+
         <div className={styles.heroStats}>
           <div className={styles.statCard}>
             <span>Complétude</span>
