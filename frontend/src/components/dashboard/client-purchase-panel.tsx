@@ -140,7 +140,15 @@ export default function ClientPurchasePanel({
         message: prepared.message,
       });
 
-      const execution = await requestJson<ExecutePrimaryBuyResponse>(
+      // Prerequisites (KYC, wallet, token inventory) are all validated by
+      // now (prepare-buy would have thrown otherwise) and the transaction is
+      // signed and about to be sent — show the confirmation as soon as it's
+      // launched rather than waiting for on-chain confirmation, which the
+      // backend's execute() call blocks on internally.
+      setShowSuccessModal(true);
+      onPurchaseSuccess?.();
+
+      requestJson<ExecutePrimaryBuyResponse>(
         '/crypto/client/marketplace/execute',
         {
           method: 'POST',
@@ -150,11 +158,20 @@ export default function ClientPurchasePanel({
           }),
         },
         session,
-      );
-
-      setLatestTxHash(execution.txHash);
-      setShowSuccessModal(true);
-      onPurchaseSuccess?.();
+      )
+        .then((execution) => {
+          setLatestTxHash(execution.txHash);
+        })
+        .catch((error) => {
+          setShowSuccessModal(false);
+          setNotice({
+            tone: 'error',
+            message:
+              error instanceof ApiError || error instanceof Error
+                ? error.message
+                : 'L’achat a été signé mais son exécution a échoué.',
+          });
+        });
     } catch (error) {
       if (error instanceof ApiError) {
         setNotice({
@@ -303,7 +320,9 @@ export default function ClientPurchasePanel({
               >
                 Voir la transaction
               </a>
-            ) : null}
+            ) : (
+              <span className={styles.successTxPending}>Envoi en cours…</span>
+            )}
             <div className={styles.successActions}>
               <Link
                 href="/?panel=opportunities"
