@@ -16,8 +16,6 @@ import type { Notice, PanelIcon } from './types';
 import {
   formatBirthDate,
   formatDate,
-  getClientKycReadiness,
-  getClientKycReadinessTotal,
   getClientProfileCompletion,
   getClientProfileCompletionTotal,
   getUserInitials,
@@ -118,18 +116,6 @@ function normalizeFieldValue(field: FieldConfig, rawValue: string) {
   return field.kind === 'select' ? trimmedValue : trimmedValue;
 }
 
-function fieldLabel(value: string | null | undefined, field?: FieldConfig) {
-  if (!value || value.trim() === '') {
-    return 'Non renseigné';
-  }
-
-  if (!field?.options) {
-    return value;
-  }
-
-  return field.options.find((option) => option.value === value)?.label ?? value;
-}
-
 export default function DashboardProfilePanel({
   resource,
   session,
@@ -143,8 +129,6 @@ export default function DashboardProfilePanel({
 
   const profileCompletion = getClientProfileCompletion(user);
   const profileCompletionTotal = getClientProfileCompletionTotal();
-  const kycReadiness = getClientKycReadiness(user);
-  const kycReadinessTotal = getClientKycReadinessTotal();
   const fieldsByKey = useMemo(
     () => Object.fromEntries(resource.fields.map((field) => [field.key, field])),
     [resource.fields],
@@ -275,13 +259,6 @@ export default function DashboardProfilePanel({
             <p>Champs stratégiques actuellement renseignés.</p>
           </div>
           <div className={styles.statCard}>
-            <span>KYC-ready</span>
-            <strong>
-              {kycReadiness}/{kycReadinessTotal}
-            </strong>
-            <p>Données déjà exploitables pour un futur parcours de conformité.</p>
-          </div>
-          <div className={styles.statCard}>
             <span>Naissance</span>
             <strong>{formatBirthDate(user)}</strong>
             <p>
@@ -293,7 +270,6 @@ export default function DashboardProfilePanel({
         </div>
       </article>
 
-      <div className={styles.contentGrid}>
         <article className={styles.formCard}>
           <div>
             <div className={styles.divHeader}>
@@ -446,71 +422,6 @@ export default function DashboardProfilePanel({
             ) : null}
           </form>
         </article>
-
-        <aside className={styles.sideCard}>
-          <div>
-            <div className={styles.eyebrow}>Synthèse</div>
-            <h3>Lecture rapide</h3>
-          </div>
-
-          <section className={styles.sideSection}>
-            <div className={styles.eyebrow}>Identité client</div>
-            <div className={styles.sideList}>
-              <div className={styles.sideListRow}>
-                <span>Nom complet</span>
-                <strong>{summarizeName(user)}</strong>
-              </div>
-              <div className={styles.sideListRow}>
-                <span>Téléphone</span>
-                <strong>{user.number?.trim() ? user.number : 'Non renseigné'}</strong>
-              </div>
-              <div className={styles.sideListRow}>
-                <span>Nationalité</span>
-                <strong>{user.nationality?.trim() ? user.nationality : 'Non renseignée'}</strong>
-              </div>
-              <div className={styles.sideListRow}>
-                <span>Profession</span>
-                <strong>{user.occupation?.trim() ? user.occupation : 'Non renseignée'}</strong>
-              </div>
-            </div>
-          </section>
-
-          <section className={styles.sideSection}>
-            <div className={styles.eyebrow}>Préparation KYC</div>
-            <ul className={styles.readyList}>
-              <li>Identité civile et coordonnées de résidence</li>
-              <li>Nationalité et lieu de naissance</li>
-              <li>Résidence fiscale et profession</li>
-              <li>Tranche de revenus et objectif d’investissement</li>
-            </ul>
-          </section>
-
-          <section className={styles.sideSection}>
-            <div className={styles.eyebrow}>Profil investisseur</div>
-            <div className={styles.sideList}>
-              <div className={styles.sideListRow}>
-                <span>Revenus annuels</span>
-                <strong>
-                  {fieldLabel(user.annualIncomeRange, fieldsByKey.annualIncomeRange)}
-                </strong>
-              </div>
-              <div className={styles.sideListRow}>
-                <span>Objectif</span>
-                <strong>
-                  {fieldLabel(
-                    user.investmentObjective,
-                    fieldsByKey.investmentObjective,
-                  )}
-                </strong>
-              </div>
-              <div className={styles.sideListRow}>
-                <span>Résidence fiscale</span>
-                <strong>{user.taxResidence?.trim() ? user.taxResidence : 'Non renseignée'}</strong>
-              </div>
-            </div>
-          </section>
-        </aside>
-      </div>
     </section>
   );
 }
