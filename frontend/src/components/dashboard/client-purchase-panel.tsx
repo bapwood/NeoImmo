@@ -24,7 +24,6 @@ import styles from './styles/client-purchase-panel.module.css';
 type ClientPurchasePanelProps = {
   property: PropertyRecord;
   session: AuthSession | null;
-  onPurchaseSuccess?: () => void;
 };
 
 type NoticeState = {
@@ -52,7 +51,6 @@ function formatCurrency(cents: number) {
 export default function ClientPurchasePanel({
   property,
   session,
-  onPurchaseSuccess,
 }: ClientPurchasePanelProps) {
   const [quantity, setQuantity] = useState('1');
   const [loading, setLoading] = useState(false);
@@ -146,7 +144,6 @@ export default function ClientPurchasePanel({
       // launched rather than waiting for on-chain confirmation, which the
       // backend's execute() call blocks on internally.
       setShowSuccessModal(true);
-      onPurchaseSuccess?.();
 
       requestJson<ExecutePrimaryBuyResponse>(
         '/crypto/client/marketplace/execute',

@@ -442,7 +442,6 @@ export default function OpportunityDetailPage() {
       <ClientPurchasePanel
         property={property}
         session={session}
-        onPurchaseSuccess={() => router.push('/?panel=property')}
       />
     </main>
   );
