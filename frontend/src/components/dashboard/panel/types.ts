@@ -10,6 +10,7 @@ export type PanelKey =
   | 'wallets'
   | 'rents'
   | 'transactions'
+  | 'kycRequests'
   | ResourceKey;
 export type ResourceSlice = {
   items: TableRow[];

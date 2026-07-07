@@ -43,6 +43,7 @@ import DashboardResourcePanel from './panel/resource-panel';
 import DashboardSidebar from './panel/sidebar';
 import DashboardTopbar from './panel/topbar';
 import DashboardTransactionsPanel from './panel/transactions-panel';
+import DashboardKycRequestsPanel from './panel/kyc-requests-panel';
 import DashboardWalletPanel from './panel/wallet-panel';
 import type { Notice, PanelKey, ResourceState } from './panel/types';
 import {
@@ -725,6 +726,7 @@ export default function DashboardPanel({
       panelParam === 'wallets' ||
       panelParam === 'rents' ||
       panelParam === 'transactions' ||
+      panelParam === 'kycRequests' ||
       matchesResource
     ) {
       setActivePanel(panelParam as PanelKey);
@@ -801,6 +803,14 @@ export default function DashboardPanel({
           <DashboardTransactionsPanel session={session} properties={properties} users={users} />
         ) : null}
 
+        {activePanel === 'kycRequests' && isAdmin && session ? (
+          <DashboardKycRequestsPanel
+            session={session}
+            users={users}
+            onReloadResource={() => void reloadResource('user')}
+          />
+        ) : null}
+
         {activePanel === 'favorites' &&
         activeResource?.key === 'user' &&
         activeResource.singleton &&
@@ -838,6 +848,7 @@ export default function DashboardPanel({
         activePanel !== 'wallets' &&
         activePanel !== 'rents' &&
         activePanel !== 'transactions' &&
+        activePanel !== 'kycRequests' &&
         activeResource?.key === 'user' &&
         activeResource.singleton &&
         activeUserProfile ? (
@@ -856,6 +867,7 @@ export default function DashboardPanel({
         activePanel !== 'wallets' &&
         activePanel !== 'rents' &&
         activePanel !== 'transactions' &&
+        activePanel !== 'kycRequests' &&
         activeResource &&
         !isClientPortfolioPanel &&
         !(activeResource.key === 'user' && activeResource.singleton) ? (

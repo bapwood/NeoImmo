@@ -6,6 +6,7 @@ import {
   HeartIcon,
   PropertyIcon,
   RentIcon,
+  ShieldIcon,
   TokenIcon,
   TransactionsIcon,
   UsersIcon,
@@ -197,7 +198,7 @@ export function buildNavigationItems(role: UserRole): NavigationItem[] {
           {
             key: 'wallets' as const,
             label: 'Trésorerie',
-            description: 'Wallets & loyers',
+            description: 'Wallets ',
             icon: WalletIcon,
           },
           {
@@ -211,6 +212,12 @@ export function buildNavigationItems(role: UserRole): NavigationItem[] {
             label: 'Transactions',
             description: 'Historique on-chain complet',
             icon: TransactionsIcon,
+          },
+          {
+            key: 'kycRequests' as const,
+            label: 'Demandes KYC',
+            description: 'Clients en attente de validation',
+            icon: ShieldIcon,
           },
         ]
       : [];
