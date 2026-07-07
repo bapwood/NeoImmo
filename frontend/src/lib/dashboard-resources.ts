@@ -86,7 +86,7 @@ const userProfileFields: FieldConfig[] = [
     requiredOnCreate: true,
     requiredOnEdit: false,
     placeholder: 'Laisser vide pour conserver le mot de passe actuel',
-    helperText: 'Uniquement requis à la création ou si tu veux le changer.',
+    helperText: 'Uniquement requis à la création ou si vous souhaitez le changer.',
   },
   { key: 'firstName', label: 'Prénom', kind: 'text', placeholder: 'Lina' },
   { key: 'lastName', label: 'Nom', kind: 'text', placeholder: 'Martin' },

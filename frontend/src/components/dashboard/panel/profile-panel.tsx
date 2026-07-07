@@ -5,7 +5,14 @@ import { useEffect, useMemo, useState } from 'react';
 import type { FieldConfig, ResourceConfig } from '@/src/lib/dashboard-resources';
 import { ApiError, requestJson } from '@/src/lib/api';
 import type { AuthSession, PanelUser } from '@/src/lib/types';
-import type { Notice } from './types';
+import {
+  PropertyIcon,
+  ShieldIcon,
+  TokenIcon,
+  UsersIcon,
+  WalletIcon,
+} from '../icons';
+import type { Notice, PanelIcon } from './types';
 import {
   formatBirthDate,
   formatDate,
@@ -25,6 +32,7 @@ type ProfileSection = {
   title: string;
   description: string;
   fieldKeys: string[];
+  icon: PanelIcon;
 };
 
 type DashboardProfilePanelProps = {
@@ -40,6 +48,7 @@ const profileSections: ProfileSection[] = [
     key: 'identity',
     title: 'Identité',
     description: 'Les informations civiles utilisées dans votre espace investisseur.',
+    icon: UsersIcon,
     fieldKeys: [
       'firstName',
       'lastName',
@@ -56,23 +65,27 @@ const profileSections: ProfileSection[] = [
     key: 'address',
     title: 'Coordonnées',
     description: 'Vos coordonnées de résidence et les éléments de contact principaux.',
+    icon: PropertyIcon,
     fieldKeys: ['address', 'postalCode', 'city', 'country', 'taxResidence'],
   },
   {
     key: 'investor',
     title: 'Profil investisseur',
     description: 'Des données utiles pour préparer les futurs parcours de conformité et de KYC.',
+    icon: TokenIcon,
     fieldKeys: ['occupation', 'annualIncomeRange', 'investmentObjective'],
   },
   {
     key: 'wallet',
     title: 'Wallet & on-chain',
     description: 'La wallet principale et le code pays qui serviront au futur parcours crypto/KYC.',
+    icon: WalletIcon,
     fieldKeys: ['walletAddress', 'countryCode'],
   },
   {
     key: 'security',
     title: 'Sécurité',
+    icon: ShieldIcon,
     description: 'Laissez le mot de passe vide si vous ne souhaitez pas le modifier.',
     fieldKeys: ['password'],
   },
@@ -289,10 +302,11 @@ export default function DashboardProfilePanel({
                 <h3>Fiche profil client</h3>
               </div>
               <button
-                className={canModify ? styles.modifyButtonClicked : styles.modifyButton }
-                onClick={() => { setCanModify(!canModify) }}
+                type="button"
+                className={canModify ? styles.modifyButtonClicked : styles.modifyButton}
+                onClick={() => setCanModify(!canModify)}
               >
-                modifier
+                {canModify ? 'Verrouiller' : 'Modifier'}
               </button>
             </div>
           </div>
@@ -309,6 +323,8 @@ export default function DashboardProfilePanel({
                 .map((fieldKey) => fieldsByKey[fieldKey])
                 .filter((field): field is FieldConfig => Boolean(field));
 
+              const Icon = section.icon;
+
               return (
                 <section
                   key={section.key}
@@ -319,28 +335,27 @@ export default function DashboardProfilePanel({
                       : styles.sectionCard
                   }
                 >
-                  <div>
-                    <div className={styles.eyebrow}>{section.title}</div>
-                    <h4>{section.title}</h4>
-                    <p>{section.description}</p>
+                  <div className={styles.sectionHeader}>
+                    <div className={styles.sectionIcon}>
+                      <Icon className={styles.sectionIconGlyph} />
+                    </div>
+                    <div>
+                      <h4>{section.title}</h4>
+                      <p>{section.description}</p>
+                    </div>
                   </div>
 
                   {section.key === 'wallet' ? (
                     <div className={styles.fieldsGrid}>
                       <div className={styles.fieldFull}>
                         <span>Wallet liée au compte</span>
-                        <div style={{
-                          padding: '0.75rem 1rem',
-                          borderRadius: '12px',
-                          background: 'rgba(var(--theme-primary-rgb), 0.05)',
-                          border: '1px solid rgba(var(--theme-primary-rgb), 0.12)',
-                          fontFamily: 'monospace',
-                          fontSize: '0.9rem',
-                          color: user.walletAddress ? 'var(--foreground)' : 'var(--muted)',
-                        }}>
+                        <div
+                          className={styles.walletAddressBox}
+                          data-empty={!user.walletAddress || undefined}
+                        >
                           {user.walletAddress || 'Aucune wallet liée'}
                         </div>
-                        <small style={{ color: 'var(--muted)', marginTop: '0.4rem', display: 'block' }}>
+                        <small>
                           Connectez MetaMask depuis la barre en haut — l&apos;adresse est automatiquement sauvegardée.
                         </small>
                       </div>
@@ -354,6 +369,7 @@ export default function DashboardProfilePanel({
                             onChange={handleInputChange}
                             placeholder={field.placeholder}
                             required={field.required}
+                            disabled={!canModify}
                           />
                           {field.helperText ? <small>{field.helperText}</small> : null}
                         </label>
@@ -379,6 +395,7 @@ export default function DashboardProfilePanel({
                               value={formState[field.key] ?? ''}
                               onChange={handleInputChange}
                               required={field.required}
+                              disabled={!canModify}
                             >
                               <option value="">Sélectionner</option>
                               {field.options?.map((option) => (
@@ -395,7 +412,7 @@ export default function DashboardProfilePanel({
                               onChange={handleInputChange}
                               placeholder={field.placeholder}
                               required={field.required}
-                              disabled={canModify}
+                              disabled={!canModify}
                             />
                           )}
 
@@ -409,21 +426,24 @@ export default function DashboardProfilePanel({
               );
             })}
 
-            <div className={styles.actions}>
-              <button type="submit" className={styles.primaryButton} disabled={saving}>
-                {saving ? 'Enregistrement...' : 'Enregistrer le profil'}
-              </button>
-              <button
-                type="button"
-                className={styles.secondaryButton}
-                onClick={() => {
-                  setFormState(buildFormState(resource, user));
-                  setNotice(null);
-                }}
-              >
-                Réinitialiser
-              </button>
-            </div>
+            {canModify ? (
+              <div className={styles.actions}>
+                <button type="submit" className={styles.primaryButton} disabled={saving}>
+                  {saving ? 'Enregistrement...' : 'Enregistrer le profil'}
+                </button>
+                <button
+                  type="button"
+                  className={styles.secondaryButton}
+                  onClick={() => {
+                    setFormState(buildFormState(resource, user));
+                    setNotice(null);
+                    setCanModify(false);
+                  }}
+                >
+                  Annuler
+                </button>
+              </div>
+            ) : null}
           </form>
         </article>
 
