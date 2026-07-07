@@ -119,10 +119,13 @@ export default function DashboardTopbar({
 
   const handleWalletButtonClick = () => void connectWallet();
 
-  // Un client ne peut être rattaché qu'à une seule wallet (contrainte KYC) :
-  // une fois connectée, on retire le bouton pour éviter toute confusion.
-  // L'admin n'a pas cette contrainte et peut reconnecter/changer librement.
-  const canConnectWallet = isAdmin || !session?.user.walletAddress;
+  // Côté client, la connexion MetaMask se fait désormais depuis la page
+  // Profil (pas besoin de ce bouton sur chaque page) — sauf si la wallet
+  // actuellement connectée diffère de celle du profil : dans ce cas précis,
+  // on garde un accès rapide pour corriger le problème depuis n'importe
+  // quelle page. L'admin n'a pas cette contrainte et garde le bouton partout.
+  const walletMismatch = Boolean(account) && Boolean(expectedWallet) && !walletMatchesProfile;
+  const showWalletActionButton = isAdmin || walletMismatch;
 
   return (
     <header className={styles.topbar}>
@@ -172,7 +175,7 @@ export default function DashboardTopbar({
               ? `${account.slice(0, 6)}...${account.slice(-4)}`
               : 'Aucune wallet front active'}
           </div>
-          {canConnectWallet ? (
+          {showWalletActionButton ? (
             <button
               type="button"
               className={styles.walletButton}

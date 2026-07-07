@@ -414,6 +414,10 @@
   font-weight: 600;
 }
 
+.walletErrorText {
+  color: var(--danger);
+}
+
 .actions {
   display: flex;
   gap: 0.75rem;

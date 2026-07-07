@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { FieldConfig, ResourceConfig } from '@/src/lib/dashboard-resources';
 import { ApiError, requestJson } from '@/src/lib/api';
 import type { AuthSession, PanelUser } from '@/src/lib/types';
+import { ensureSupportedChain, requestWalletAccounts } from '@/src/lib/wallet';
 import {
   PropertyIcon,
   ShieldIcon,
@@ -207,10 +208,54 @@ export default function DashboardProfilePanel({
     [resource.fields],
   );
   const [canModify, setCanModify] = useState<boolean>(false);
+  const [connectingWallet, setConnectingWallet] = useState(false);
+  const [walletError, setWalletError] = useState<string | null>(null);
 
   useEffect(() => {
     setFormState(buildFormState(resource, user));
   }, [resource, user]);
+
+  async function handleConnectWallet() {
+    if (typeof window === 'undefined' || !window.ethereum) {
+      setWalletError('MetaMask non détecté. Installez l’extension MetaMask pour continuer.');
+      return;
+    }
+
+    setConnectingWallet(true);
+    setWalletError(null);
+
+    try {
+      await ensureSupportedChain();
+      const accounts = await requestWalletAccounts();
+      const connected = accounts[0];
+
+      if (!connected) {
+        return;
+      }
+
+      const updatedUser = await requestJson<PanelUser>(
+        '/user/me',
+        {
+          method: 'PUT',
+          body: JSON.stringify({ walletAddress: connected }),
+        },
+        session,
+      );
+
+      onProfileUpdated(updatedUser);
+    } catch (error) {
+      if (error instanceof ApiError && error.code === 'AUTH_EXPIRED') {
+        onSessionExpired();
+        return;
+      }
+
+      setWalletError(
+        error instanceof Error ? error.message : 'Connexion à MetaMask impossible.',
+      );
+    } finally {
+      setConnectingWallet(false);
+    }
+  }
 
   useEffect(() => {
     if (typeof window === 'undefined' || window.location.hash !== '#wallet-on-chain') {
@@ -404,9 +449,29 @@ export default function DashboardProfilePanel({
                         >
                           {user.walletAddress || 'Aucune wallet liée'}
                         </div>
-                        <small>
-                          Connectez MetaMask depuis la barre en haut — l&apos;adresse est automatiquement sauvegardée.
-                        </small>
+                        {user.walletAddress ? (
+                          <small>
+                            Une seule wallet peut être rattachée à votre compte (contrainte KYC).
+                          </small>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              className={styles.secondaryButton}
+                              onClick={() => void handleConnectWallet()}
+                              disabled={connectingWallet}
+                            >
+                              {connectingWallet ? 'Connexion...' : 'Connecter MetaMask'}
+                            </button>
+                            {walletError ? (
+                              <small className={styles.walletErrorText}>{walletError}</small>
+                            ) : (
+                              <small>
+                                L&apos;adresse sera automatiquement sauvegardée sur votre profil.
+                              </small>
+                            )}
+                          </>
+                        )}
                       </div>
                       {sectionFields
                         .filter((f) => f.key !== 'walletAddress')
