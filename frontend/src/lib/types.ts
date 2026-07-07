@@ -259,7 +259,7 @@ export type PreparedMarketplaceTypes = {
 
 export type PreparedMarketplaceMessage = {
   action: string;
-  wallet: string;
+  buyer: string;
   to: string;
   propertyAddress: string;
   amount: string;

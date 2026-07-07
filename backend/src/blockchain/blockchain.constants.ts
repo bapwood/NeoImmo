@@ -30,7 +30,7 @@ export const PROPERTY_SHARES_ABI = [
 export const MARKETPLACE_TYPES = {
   MarketplaceAction: [
     { name: 'action', type: 'string' },
-    { name: 'wallet', type: 'address' },
+    { name: 'buyer', type: 'address' },
     { name: 'to', type: 'address' },
     { name: 'propertyAddress', type: 'address' },
     { name: 'amount', type: 'uint256' },

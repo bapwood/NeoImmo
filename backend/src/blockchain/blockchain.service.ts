@@ -80,7 +80,9 @@ type DeploymentManifest = {
 
 type MarketplaceMessage = {
   action: 'BUY';
-  wallet: string;
+  /** The client authorizing/signing this purchase (recovered from the signature). */
+  buyer: string;
+  /** Destination wallet for the tokens (currently always equal to buyer). */
   to: string;
   propertyAddress: string;
   amount: string;
@@ -2321,7 +2323,7 @@ export class BlockchainService {
       types: MARKETPLACE_TYPES,
       message: {
         action: 'BUY',
-        wallet: user.walletAddress,
+        buyer: user.walletAddress,
         to: user.walletAddress,
         propertyAddress: property.contractAddress,
         amount: payload.amount,
@@ -2419,7 +2421,7 @@ export class BlockchainService {
     );
 
     if (
-      recoveredWallet.toLowerCase() !== prepared.message.wallet.toLowerCase()
+      recoveredWallet.toLowerCase() !== prepared.message.buyer.toLowerCase()
     ) {
       throw new BadRequestException('Signature EIP-712 invalide.');
     }
