@@ -54,17 +54,26 @@ def main():
 
     print("\n=== Association de parts aux clients (achats primaires) ===")
     purchases = 0
+
+    property_states = {}
     for prop in active_properties:
         state = base.request_json(
             "GET", session, f"/crypto/properties/{prop['id']}/state",
         )
-        token_price = state["property"]["tokenPrice"]
-        token_number = state["property"]["tokenNumber"]
+        property_states[prop["id"]] = {
+            "token_price": state["property"]["tokenPrice"],
+            "token_number": state["property"]["tokenNumber"],
+        }
 
-        for client in clients:
-            amount = max(1, round(token_number * random.uniform(0.01, 0.03)))
+    # Toutes les positions d'un client sont établies à la suite (un client
+    # après l'autre) plutôt qu'en alternant les biens, pour que son
+    # portefeuille se construise en un seul passage.
+    for client in clients:
+        for prop in active_properties:
+            info = property_states[prop["id"]]
+            amount = max(1, round(info["token_number"] * random.uniform(0.01, 0.03)))
             try:
-                base.buy_shares(session, prop["id"], token_price, client, amount)
+                base.buy_shares(session, prop["id"], info["token_price"], client, amount)
                 print(f"  - {client['email']} achète {amount} parts de {prop['name']}")
                 purchases += 1
             except RuntimeError as error:
